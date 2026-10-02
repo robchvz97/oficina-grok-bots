@@ -67,7 +67,9 @@
   #knob, #look-knob { position: absolute; left: 44px; top: 44px; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,250,242,0.9); }
 
   .hud-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  #hud-hide, #hud-show, #hud-refresh, #hud-refresh-out { border: 0; background: #1c1915; color: #f4efe6; border-radius: 999px; width: 28px; height: 28px; cursor: pointer; }
+  #hud-hide, #hud-show, #hud-refresh, #hud-refresh-out, #voz-btn { border: 0; background: #1c1915; color: #f4efe6; border-radius: 999px; height: 28px; cursor: pointer; }
+  #hud-hide, #hud-show, #hud-refresh, #hud-refresh-out { width: 28px; }
+  #voz-btn { width: auto; padding: 0 10px; font-size: 12px; }
   #hud-show { position: fixed; top: 16px; left: 16px; z-index: 6; width: auto; padding: 0 12px; }
   #hud-refresh-out { position: fixed; top: 16px; left: 92px; z-index: 6; }
   .hud-top span { display: flex; gap: 6px; }
@@ -78,7 +80,7 @@
 <button id="hud-show" type="button" hidden>Equipo</button>
 <button id="hud-refresh-out" type="button" title="Actualizar">↻</button>
 <div id="hud">
-  <div class="hud-top"><h1>Oficina Frutos Chávez</h1><span><button id="hud-refresh" type="button" title="Actualizar">↻</button><button id="hud-hide" type="button" title="Ocultar">—</button></span></div>
+  <div class="hud-top"><h1>Oficina Frutos Chávez</h1><span><button id="voz-btn" type="button" title="Activar voz">Voz</button><button id="hud-refresh" type="button" title="Actualizar">↻</button><button id="hud-hide" type="button" title="Ocultar">—</button></span></div>
   <p class="sub">Los escritorios estan vacios hasta que tus bots avisen. Pega el aviso en cada uno, con su nombre real.</p>
   <p class="sub" id="live">Buscando señal…</p>
   <div id="roster"></div>
@@ -1154,22 +1156,38 @@ const clock = new THREE.Clock();
 
 const spoken = {};
 const voiceTune = { gustav: { pitch: 0.8, rate: 0.95 }, nigoo: { pitch: 1.15, rate: 1.05 }, gori: { pitch: 1.28, rate: 1.02 }, muller: { pitch: 0.68, rate: 0.9 } };
-window.addEventListener("pointerdown", () => { if (window.speechSynthesis) window.speechSynthesis.getVoices(); });
+let voiceOn = false;
+let currentUtter = null;
+function unlockVoice() {
+  if (!window.speechSynthesis) return;
+  voiceOn = true;
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.resume();
+  currentUtter = new SpeechSynthesisUtterance("Listo");
+  currentUtter.lang = "es-MX";
+  currentUtter.volume = 1;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(currentUtter);
+  const btn = document.getElementById("voz-btn");
+  if (btn) btn.textContent = "Voz on";
+}
+document.getElementById("voz-btn").onclick = unlockVoice;
 function speakNear(bot) {
-  const textToSay = String(bot.task || bot.role || "").trim();
-  if (!textToSay || !window.speechSynthesis) return;
+  const textToSay = String(bot.task || "").trim();
+  if (!voiceOn || !textToSay || !window.speechSynthesis) return;
   if (spoken[bot.name] === textToSay) return;
   spoken[bot.name] = textToSay;
+  if (window.speechSynthesis.paused) window.speechSynthesis.resume();
   window.speechSynthesis.cancel();
-  const line = textToSay;
-  const utter = new SpeechSynthesisUtterance(line);
-  utter.lang = "es-MX";
+  currentUtter = new SpeechSynthesisUtterance(textToSay);
+  currentUtter.lang = "es-MX";
+  currentUtter.volume = 1;
   const tune = voiceTune[String(bot.name).toLowerCase()] || { pitch: 1, rate: 1 };
-  utter.pitch = tune.pitch;
-  utter.rate = tune.rate;
+  currentUtter.pitch = tune.pitch;
+  currentUtter.rate = tune.rate;
   const voices = window.speechSynthesis.getVoices().filter(v => v.lang && v.lang.toLowerCase().startsWith("es"));
-  if (voices.length) utter.voice = voices[0];
-  window.speechSynthesis.speak(utter);
+  if (voices.length) currentUtter.voice = voices[0];
+  window.speechSynthesis.speak(currentUtter);
 }
 function animate() {
   requestAnimationFrame(animate);
