@@ -124,7 +124,13 @@ function renderRoster() {
   });
 }
 function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({ "&": "&", "<": "<", ">": ">", '"': """, "'": "&#39;" }[c]));
+  return String(s).replace(/[&<>"']/g, function (c) {
+    if (c === "&") return "&";
+    if (c === "<") return "<";
+    if (c === ">") return ">";
+    if (c === '"') return """;
+    return "&#39;";
+  });
 }
 renderRoster();
 roster.addEventListener("input", onEdit);
