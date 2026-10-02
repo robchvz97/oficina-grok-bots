@@ -63,6 +63,7 @@
   #joy, #look { position: fixed; bottom: 28px; width: 128px; height: 128px; border-radius: 50%; background: rgba(28,25,21,0.35); border: 2px solid rgba(255,255,255,0.35); touch-action: none; z-index: 6; }
   #joy { left: 22px; }
   #look { right: 22px; }
+  @media (hover: hover) and (pointer: fine) { #joy, #look { display: none; } }
   canvas { touch-action: none; }
   #knob, #look-knob { position: absolute; left: 44px; top: 44px; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,250,242,0.9); }
 
