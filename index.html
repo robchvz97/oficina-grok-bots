@@ -367,33 +367,84 @@ const LOOKS = {
 };
 function makePerson(color) {
   const g = new THREE.Group();
-  const skin = 0xf0c7a4;
-  const shirt = new THREE.MeshStandardMaterial({ color, roughness: 0.65 });
-  const cloth = new THREE.MeshStandardMaterial({ color: 0x2c2824, roughness: 0.8 });
-  const skinM = new THREE.MeshStandardMaterial({ color: skin, roughness: 0.55 });
-  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.26, 6, 12), shirt);
+  const shirt = new THREE.MeshStandardMaterial({ color, roughness: 0.55 });
+  const cloth = new THREE.MeshStandardMaterial({ color: 0x2c2824, roughness: 0.7 });
+  const skinM = new THREE.MeshStandardMaterial({ color: 0xf0c7a4, roughness: 0.5 });
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.17, 0.28, 8, 16), shirt);
   body.position.y = 0.92;
   body.castShadow = true;
   const neck = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 10), skinM);
-  neck.position.y = 1.16;
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 20, 16), skinM);
-  head.position.y = 1.36;
+  neck.position.y = 1.18;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 24, 18), skinM);
+  head.position.y = 1.38;
   head.castShadow = true;
-  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.155, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.55), new THREE.MeshStandardMaterial({ color: 0x2a211c }));
-  hair.position.y = 1.4;
-  const legL = new THREE.Mesh(new THREE.CapsuleGeometry(0.055, 0.28, 4, 8), cloth);
+  const eyeWhite = new THREE.MeshStandardMaterial({ color: 0xf7f4ef });
+  const pupil = new THREE.MeshStandardMaterial({ color: 0x2a211c });
+  function eye(x) {
+    const e = new THREE.Group();
+    const w = new THREE.Mesh(new THREE.SphereGeometry(0.028, 10, 8), eyeWhite);
+    const p = new THREE.Mesh(new THREE.SphereGeometry(0.014, 8, 8), pupil);
+    p.position.z = 0.02;
+    e.add(w, p);
+    e.position.set(x, 1.4, 0.13);
+    return e;
+  }
+  const features = {
+    nigoo: new THREE.Group(),
+    muller: new THREE.Group(),
+    gori: new THREE.Group(),
+    gustav: new THREE.Group()
+  };
+  const hairMat = {
+    nigoo: new THREE.MeshStandardMaterial({ color: 0x2a2118 }),
+    muller: new THREE.MeshStandardMaterial({ color: 0x6a4632 }),
+    gori: new THREE.MeshStandardMaterial({ color: 0x6b4a30 })
+  };
+  function puff(group, mat, x, y, z, r) {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), mat);
+    m.position.set(x, y, z);
+    group.add(m);
+  }
+  puff(features.nigoo, hairMat.nigoo, 0, 1.5, 0, 0.1);
+  puff(features.nigoo, hairMat.nigoo, -0.09, 1.46, 0.02, 0.07);
+  puff(features.nigoo, hairMat.nigoo, 0.09, 1.46, 0.02, 0.07);
+  puff(features.nigoo, hairMat.nigoo, 0, 1.44, -0.08, 0.08);
+  puff(features.nigoo, hairMat.nigoo, 0, 1.28, 0.1, 0.07);
+  puff(features.nigoo, hairMat.nigoo, -0.06, 1.26, 0.08, 0.05);
+  puff(features.nigoo, hairMat.nigoo, 0.06, 1.26, 0.08, 0.05);
+  puff(features.muller, hairMat.muller, 0, 1.52, 0, 0.11);
+  puff(features.muller, hairMat.muller, -0.1, 1.46, 0.04, 0.07);
+  puff(features.muller, hairMat.muller, 0.1, 1.48, 0.02, 0.08);
+  puff(features.muller, hairMat.muller, 0.04, 1.5, -0.06, 0.07);
+  const goriCap = new THREE.Mesh(new THREE.SphereGeometry(0.155, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.48), hairMat.gori);
+  goriCap.position.y = 1.42;
+  features.gori.add(goriCap);
+  const glass = new THREE.MeshStandardMaterial({ color: 0x1a1a1a });
+  function lens(x) {
+    const r = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.008, 8, 16), glass);
+    r.position.set(x, 1.4, 0.15);
+    return r;
+  }
+  features.gustav.add(lens(-0.05), lens(0.05));
+  const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.008, 0.008), glass);
+  bridge.position.set(0, 1.4, 0.15);
+  features.gustav.add(bridge);
+  Object.values(features).forEach(group => { group.visible = false; g.add(group); });
+  const legL = new THREE.Mesh(new THREE.CapsuleGeometry(0.055, 0.28, 4, 10), cloth);
   const legR = legL.clone();
   legL.position.set(-0.08, 0.46, 0);
   legR.position.set(0.08, 0.46, 0);
-  const armL = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.24, 4, 8), shirt);
+  const armL = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.24, 4, 10), shirt);
   const armR = armL.clone();
   armL.position.set(-0.24, 0.98, 0);
   armR.position.set(0.24, 0.98, 0);
-  g.add(body, neck, head, hair, legL, legR, armL, armR);
+  g.add(body, neck, head, eye(-0.055), eye(0.055), legL, legR, armL, armR);
   g.userData.limbs = { legL, legR, armL, armR, body };
   g.userData.head = head;
-  g.userData.hair = hair;
+  g.userData.neck = neck;
   g.userData.shirt = shirt;
+  g.userData.skin = skinM;
+  g.userData.features = features;
   return g;
 }
 
@@ -415,45 +466,26 @@ const actors = bots.map((b, i) => {
   const bubble = makeBubble();
   bubble.position.set(0.35, 1.55, 0);
   person.add(bubble);
-  const faceMat = new THREE.SpriteMaterial({ transparent: true, depthWrite: false });
-  const face = new THREE.Sprite(faceMat);
-  face.position.set(0, 1.36, 0.08);
-  face.scale.set(0.4, 0.4, 1);
-  face.visible = false;
-  person.add(face);
   return {
     bot: b,
     person,
     label,
     bubble,
-    face,
     home: home[i],
     phase: i * 1.3,
     setLabel() { paintLabel(label, b.name, b.role); setFace(this); }
   };
 });
-const FACES = { nigoo: "faces/nigoo.png", muller: "faces/muller.png", gori: "faces/gori.png", gustav: "faces/gustav.png" };
+const SKIN = { nigoo: 0xc68642, muller: 0xe8c4a2, gori: 0xf0c7a4, gustav: 0xe8c4a0 };
 function setFace(actor) {
   const key = String(actor.bot.name || "").toLowerCase();
   const look = LOOKS[key];
-  const head = actor.person.userData.head;
-  const hair = actor.person.userData.hair;
   const shirt = actor.person.userData.shirt;
+  const skin = actor.person.userData.skin;
+  const features = actor.person.userData.features || {};
   if (look && shirt) shirt.color.setHex(look.shirt);
-  if (!FACES[key]) {
-    actor.face.visible = false;
-    if (head) head.visible = true;
-    if (hair) hair.visible = true;
-    return;
-  }
-  new THREE.TextureLoader().load(FACES[key], function (tex) {
-    if (tex.colorSpace !== undefined && THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
-    actor.face.material.map = tex;
-    actor.face.material.needsUpdate = true;
-    actor.face.visible = true;
-    if (head) head.visible = false;
-    if (hair) hair.visible = false;
-  });
+  if (skin && SKIN[key]) skin.color.setHex(SKIN[key]);
+  Object.keys(features).forEach(name => { features[name].visible = name === key; });
 }
 function makeBubble() {
   const c = document.createElement("canvas");
