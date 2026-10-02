@@ -840,6 +840,34 @@ const packLeg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.7, 0.08), new THREE
   scene.add(leg);
 });
 scene.add(packTable);
+
+const countTable = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.07, 0.62), new THREE.MeshStandardMaterial({ color: 0x8a5a32, roughness: 0.55 }));
+countTable.position.set(-3.15, 0.7, -6.15);
+scene.add(countTable);
+const countLeg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.66, 0.06), new THREE.MeshStandardMaterial({ color: 0x6b4428 }));
+[[-0.4, -0.22], [0.4, -0.22], [-0.4, 0.22], [0.4, 0.22]].forEach(([x, z]) => {
+  const leg = countLeg.clone();
+  leg.position.set(-3.15 + x, 0.33, -6.15 + z);
+  scene.add(leg);
+});
+const counter = new THREE.Group();
+const counterBody = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.28, 0.34), new THREE.MeshStandardMaterial({ color: 0x1f8a4c, roughness: 0.4, metalness: 0.2 }));
+counterBody.position.y = 0.14;
+const counterSlot = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.05, 0.16), new THREE.MeshStandardMaterial({ color: 0x163d28 }));
+counterSlot.position.set(0.18, 0.3, 0);
+counter.add(counterBody, counterSlot);
+counter.position.set(-3.15, 0.74, -6.15);
+scene.add(counter);
+const bills = [];
+for (let i = 0; i < 5; i++) {
+  const bill = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.07), new THREE.MeshBasicMaterial({ color: 0x8fd18a, side: THREE.DoubleSide }));
+  bill.position.set(-3.35, 0.96, -6.15);
+  bill.rotation.x = -Math.PI / 2;
+  bill.visible = false;
+  scene.add(bill);
+  bills.push(bill);
+}
+
 const boxes = [];
 const iqfCanvas = document.createElement("canvas");
 iqfCanvas.width = 256; iqfCanvas.height = 128;
@@ -1135,7 +1163,7 @@ function planRest(resting, t) {
     names[n] = names[j];
     names[j] = tmp;
   }
-  const acts = ["sleep", "play", "chat", "drink", "freezer"];
+  const acts = ["sleep", "play", "chat", "drink", "freezer", "count"];
   const map = {};
   names.forEach(name => { map[name] = acts[Math.floor(Math.random() * acts.length)]; });
   if (names.length >= 2 && Math.random() < 0.45) {
@@ -1154,7 +1182,8 @@ const solids = [
   { x: 7.5, z: 4.4, hx: 0.5, hz: 0.55 },
   { x: -6.5, z: 5.2, hx: 0.4, hz: 0.4 },
   { x: -6.85, z: -6.15, hx: 0.9, hz: 0.45 },
-  { x: -4.9, z: -6.15, hx: 0.9, hz: 0.45 }
+  { x: -4.9, z: -6.15, hx: 0.9, hz: 0.45 },
+  { x: -3.15, z: -6.15, hx: 0.55, hz: 0.35 }
 ];
 function keepOut(pos, radius) {
   pos.x = Math.max(-7.35, Math.min(7.35, pos.x));
@@ -1394,6 +1423,14 @@ function animate() {
   const playing = actors.some(a => a.pose === "play");
   const pinging = actors.some(a => a.pose === "ping");
   if (playing && Math.abs(Math.sin(t * 3)) < 0.12 && t - lastKick > 0.4) { lastKick = t; kick(); }
+  const counting = actors.some(a => a.pose === "count");
+  bills.forEach((bill, i) => {
+    bill.visible = counting;
+    if (!counting) return;
+    const cycle = (t * 2.4 + i * 0.35) % 1;
+    bill.position.set(-3.35 + cycle * 0.42, 0.96, -6.15);
+  });
+  if (counting && t - lastPing > 0.09) { lastPing = t; tap(2100, 0.04, 0.05); }
   if (pinging && Math.abs(Math.sin(t * 2.2)) > 0.96 && t - lastPing > 0.28) { lastPing = t; tap(880, 0.06, 0.08); }
   if (rain.visible) rain.children.forEach(drop => {
     drop.position.y -= drop.userData.speed;
@@ -1467,6 +1504,12 @@ function animate() {
         officeBall.position.x = 4.2 + Math.cos(ang + 0.8) * 0.55;
         officeBall.position.z = 3.4 + Math.sin(ang + 0.8) * 0.4;
         officeBall.position.y = 0.18 + Math.abs(Math.sin(t * 3)) * 0.25;
+      } else if (mode === "count") {
+        tx = -3.15;
+        tz = -5.25;
+        trot = Math.PI;
+        emoji = "💵";
+        pose = "count";
       } else if (mode === "freezer") {
         tx = -5.85;
         tz = -5.15 + (si - 0.5) * 0.45;
