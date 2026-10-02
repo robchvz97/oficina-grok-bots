@@ -1155,7 +1155,7 @@ function setMurmur(on, t) {
 const clock = new THREE.Clock();
 
 const spoken = {};
-const voiceTune = { gustav: { pitch: 0.8, rate: 0.95 }, nigoo: { pitch: 1.15, rate: 1.05 }, gori: { pitch: 1.28, rate: 1.02 }, muller: { pitch: 0.68, rate: 0.9 } };
+const voiceTune = { gustav: { pitch: 0.72, rate: 0.9 }, nigoo: { pitch: 0.84, rate: 0.92 }, gori: { pitch: 0.78, rate: 0.9 }, muller: { pitch: 0.64, rate: 0.88 } };
 let voiceOn = false;
 let currentUtter = null;
 function unlockVoice() {
@@ -1186,7 +1186,9 @@ function speakNear(bot) {
   currentUtter.pitch = tune.pitch;
   currentUtter.rate = tune.rate;
   const voices = window.speechSynthesis.getVoices().filter(v => v.lang && v.lang.toLowerCase().startsWith("es"));
-  if (voices.length) currentUtter.voice = voices[0];
+  const male = voices.find(v => /pablo|jorge|diego|juan|carlos|raul|enrique|male|hombre/i.test(v.name));
+  if (male) currentUtter.voice = male;
+  else if (voices.length) currentUtter.voice = voices[0];
   window.speechSynthesis.speak(currentUtter);
 }
 function animate() {
