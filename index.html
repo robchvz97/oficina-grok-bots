@@ -42,6 +42,7 @@
     border-radius: 8px; padding: 6px 8px; font: inherit; font-size: 13px;
   }
   .row { display: grid; grid-template-columns: 1.1fr .9fr; gap: 6px; }
+  #clima { position: fixed; top: 48px; right: 16px; z-index: 6; color: #f4efe6; font-size: 12px; text-shadow: 0 1px 4px #000; }
   #murmur-note { position: fixed; top: 16px; right: 16px; z-index: 6; background: rgba(28,25,21,.8); color: #f4efe6; border-radius: 999px; padding: 6px 10px; font-size: 12px; }
   #hint {
     position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
@@ -89,6 +90,7 @@
 </div>
 <div id="clock"></div>
 <div id="hint">W adelante · S atras · A izquierda · D derecha · en el celular usa el joystick</div>
+<div id="clima"></div>
 <div id="murmur-note" hidden>Murmurando</div>
 <div id="look"><div id="look-knob"></div></div>
 <div id="joy"><div id="knob"></div></div>
@@ -416,6 +418,44 @@ function pane(w, h, x, y, z, rotY) {
   return g;
 }
 pane(10.4, 5.6, 0.2, 3.6, -6.9, 0);
+const rain = new THREE.Group();
+const dropGeo = new THREE.BoxGeometry(0.02, 0.32, 0.02);
+const dropMat = new THREE.MeshBasicMaterial({ color: 0xd7e8f4, transparent: true, opacity: 0.55 });
+for (let i = 0; i < 180; i++) {
+  const drop = new THREE.Mesh(dropGeo, dropMat);
+  drop.position.set(-5.2 + Math.random() * 10.4, Math.random() * 6, -6.55);
+  drop.userData.speed = 0.08 + Math.random() * 0.1;
+  rain.add(drop);
+}
+rain.visible = false;
+scene.add(rain);
+async function loadWeather() {
+  try {
+    const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=20.6767&longitude=-103.3496&current=weather_code,cloud_cover&timezone=America%2FMexico_City");
+    const data = await res.json();
+    const code = data.current.weather_code;
+    const clouds = data.current.cloud_cover || 0;
+    const raining = [51,53,55,56,57,61,63,65,66,67,80,81,82,95,96,99].includes(code);
+    rain.visible = raining;
+    if (raining) {
+      glassMat.color.setHex(0x8aa0ae);
+      glassMat.emissiveIntensity = 0.12;
+      sun.intensity = 0.5;
+    } else if (clouds > 60 || code === 45 || code === 48) {
+      glassMat.color.setHex(0xa9b7c2);
+      glassMat.emissiveIntensity = 0.2;
+      sun.intensity = 0.72;
+    } else {
+      glassMat.color.setHex(0xcfe6f4);
+      glassMat.emissiveIntensity = 0.5;
+      sun.intensity = 1.25;
+    }
+    const note = document.getElementById("clima");
+    if (note) note.textContent = raining ? "Lluvia en Guadalajara" : clouds > 60 ? "Nublado en Guadalajara" : "Despejado en Guadalajara";
+  } catch (e) {}
+}
+loadWeather();
+setInterval(loadWeather, 600000);
 pane(4.6, 5.4, -7.9, 3.5, -1.2, Math.PI / 2);
 pane(4.6, 5.4, -7.9, 3.5, 2.6, Math.PI / 2);
 for (let i = -4; i <= 4; i++) box(0.045, 5.6, 0.045, 0xd9dde2, i * 1.15, 3.6, -6.86);
@@ -998,6 +1038,10 @@ const clock = new THREE.Clock();
 function animate() {
   requestAnimationFrame(animate);
   const t = clock.getElapsedTime();
+  if (rain.visible) rain.children.forEach(drop => {
+    drop.position.y -= drop.userData.speed;
+    if (drop.position.y < 0.4) drop.position.y = 6;
+  });
   const forward = (keys.s || keys.arrowdown ? 1 : 0) - (keys.w || keys.arrowup ? 1 : 0) - joy.y;
   const strafe = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0) + joy.x;
   if (forward || strafe) focus = null;
