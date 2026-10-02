@@ -895,21 +895,23 @@ let voices = null;
 function ensureVoices() {
   const ctx = audio();
   if (voices) return voices;
+  const buffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+  const noise = ctx.createBufferSource();
+  noise.buffer = buffer;
+  noise.loop = true;
+  const filter = ctx.createBiquadFilter();
+  filter.type = "bandpass";
+  filter.frequency.value = 500;
+  filter.Q.value = 0.8;
   const gain = ctx.createGain();
   gain.gain.value = 0;
+  noise.connect(filter);
+  filter.connect(gain);
   gain.connect(ctx.destination);
-  const make = (freq) => {
-    const o = ctx.createOscillator();
-    o.type = "square";
-    o.frequency.value = freq;
-    const g = ctx.createGain();
-    g.gain.value = 0.15;
-    o.connect(g);
-    g.connect(gain);
-    o.start();
-    return o;
-  };
-  voices = { ctx, gain, a: make(180), b: make(240) };
+  noise.start();
+  voices = { ctx, gain, filter };
   return voices;
 }
 function setMurmur(on, t) {
@@ -917,10 +919,10 @@ function setMurmur(on, t) {
   if (note) note.hidden = !on;
   if (!audioCtx) return;
   const v = ensureVoices();
-  v.gain.gain.setTargetAtTime(on ? 0.28 : 0, v.ctx.currentTime, 0.2);
+  const syllable = Math.pow(Math.max(0, Math.sin(t * 5.5)), 2) * 0.5 + Math.pow(Math.max(0, Math.sin(t * 3.1 + 1.4)), 2) * 0.35;
+  v.gain.gain.setTargetAtTime(on ? 0.08 * syllable : 0, v.ctx.currentTime, 0.08);
   if (!on) return;
-  v.a.frequency.setTargetAtTime(160 + Math.abs(Math.sin(t * 6)) * 40, v.ctx.currentTime, 0.1);
-  v.b.frequency.setTargetAtTime(220 + Math.abs(Math.sin(t * 4)) * 50, v.ctx.currentTime, 0.1);
+  v.filter.frequency.setTargetAtTime(380 + syllable * 420, v.ctx.currentTime, 0.08);
 }
 const clock = new THREE.Clock();
 function animate() {
