@@ -1315,13 +1315,28 @@ function tap(freq, dur, gainValue) {
   const g = ctx.createGain();
   o.type = "triangle";
   o.frequency.setValueAtTime(freq, ctx.currentTime);
-  o.frequency.exponentialRampToValueAtTime(freq * 0.5, ctx.currentTime + dur);
+  o.frequency.exponentialRampToValueAtTime(Math.max(40, freq * 0.45), ctx.currentTime + dur);
   g.gain.setValueAtTime(gainValue, ctx.currentTime);
   g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
   o.connect(g);
   g.connect(ctx.destination);
   o.start();
   o.stop(ctx.currentTime + dur);
+}
+function kick() {
+  if (!weatherAudio) return;
+  const ctx = weatherAudio.ctx;
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type = "sine";
+  o.frequency.setValueAtTime(180, ctx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.12);
+  g.gain.setValueAtTime(0.28, ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.16);
+  o.connect(g);
+  g.connect(ctx.destination);
+  o.start();
+  o.stop(ctx.currentTime + 0.16);
 }
 let lastKick = 0;
 let lastPing = 0;
@@ -1378,7 +1393,7 @@ function animate() {
   updateWeatherAudio(t);
   const playing = actors.some(a => a.pose === "play");
   const pinging = actors.some(a => a.pose === "ping");
-  if (playing && Math.sin(t * 3) > 0.95 && t - lastKick > 0.45) { lastKick = t; tap(140, 0.12, 0.12); }
+  if (playing && Math.abs(Math.sin(t * 3)) < 0.12 && t - lastKick > 0.4) { lastKick = t; kick(); }
   if (pinging && Math.abs(Math.sin(t * 2.2)) > 0.96 && t - lastPing > 0.28) { lastPing = t; tap(880, 0.06, 0.08); }
   if (rain.visible) rain.children.forEach(drop => {
     drop.position.y -= drop.userData.speed;
