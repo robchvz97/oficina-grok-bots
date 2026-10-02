@@ -1369,6 +1369,11 @@ function kick() {
 }
 let lastKick = 0;
 let lastPing = 0;
+let lastCount = 0;
+function countBurst() {
+  if (!weatherAudio) return;
+  for (let i = 0; i < 8; i++) setTimeout(() => tap(1600 + i * 40, 0.03, 0.07), i * 45);
+}
 function unlockVoice() {
   startWeatherAudio();
   if (!window.speechSynthesis) return;
@@ -1427,10 +1432,11 @@ function animate() {
   bills.forEach((bill, i) => {
     bill.visible = counting;
     if (!counting) return;
-    const cycle = (t * 2.4 + i * 0.35) % 1;
-    bill.position.set(-3.35 + cycle * 0.42, 0.96, -6.15);
+    const cycle = (t * 1.1 + i * 0.28) % 1;
+    bill.position.set(-3.15 + cycle * 0.15, 0.96 - cycle * 0.7, -5.7 + cycle * 0.45);
+    bill.rotation.z = cycle * 1.4;
   });
-  if (counting && t - lastPing > 0.09) { lastPing = t; tap(2100, 0.04, 0.05); }
+  if (counting && t - lastCount > 0.55) { lastCount = t; countBurst(); }
   if (pinging && Math.abs(Math.sin(t * 2.2)) > 0.96 && t - lastPing > 0.28) { lastPing = t; tap(880, 0.06, 0.08); }
   if (rain.visible) rain.children.forEach(drop => {
     drop.position.y -= drop.userData.speed;
