@@ -762,6 +762,38 @@ function keepOut(pos, radius) {
     }
   });
 }
+
+let murmur = null;
+function unlockMurmur() {
+  if (murmur) return;
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const buffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+  const noise = ctx.createBufferSource();
+  noise.buffer = buffer;
+  noise.loop = true;
+  const filter = ctx.createBiquadFilter();
+  filter.type = "bandpass";
+  filter.frequency.value = 420;
+  filter.Q.value = 0.7;
+  const gain = ctx.createGain();
+  gain.gain.value = 0;
+  noise.connect(filter);
+  filter.connect(gain);
+  gain.connect(ctx.destination);
+  noise.start();
+  murmur = { ctx, gain, filter };
+}
+window.addEventListener("pointerdown", unlockMurmur, { once: true });
+window.addEventListener("keydown", unlockMurmur, { once: true });
+function setMurmur(on, t) {
+  if (!murmur) return;
+  if (murmur.ctx.state === "suspended") murmur.ctx.resume();
+  const target = on ? 0.045 : 0;
+  murmur.gain.gain.setTargetAtTime(target, murmur.ctx.currentTime, 0.4);
+  if (on) murmur.filter.frequency.setTargetAtTime(360 + Math.sin(t * 1.7) * 80, murmur.ctx.currentTime, 0.3);
+}
 const clock = new THREE.Clock();
 function animate() {
   requestAnimationFrame(animate);
@@ -894,6 +926,7 @@ function animate() {
       limbs.armR.rotation.x = status === "trabajando" ? -0.8 + Math.sin(t * 8 + i + 1) * 0.25 : swing * 0.7;
       a.person.position.y = moving ? Math.abs(Math.sin(t * 7 + a.phase)) * 0.04 : 0;
     }
+    a.pose = pose;
     if (a.handCan) a.handCan.visible = pose === "drink";
     paintBubble(a.bubble, emoji, show);
     a.bubble.position.y = 1.62 + Math.sin(t * 2 + i) * 0.04;
@@ -917,6 +950,7 @@ function animate() {
     }
   }
   actors.forEach(a => keepOut(a.person.position, 0.28));
+  setMurmur(actors.filter(a => a.pose === "chat").length >= 2, t);
   renderer.render(scene, camera);
 }
 animate();
