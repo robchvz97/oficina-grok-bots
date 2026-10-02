@@ -473,15 +473,6 @@ function paintSky(mode) {
     ctx.beginPath(); ctx.ellipse(x, y, 90, 42, 0, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.ellipse(x + 50, y - 18, 60, 36, 0, 0, Math.PI * 2); ctx.fill();
   }
-  if (mode === "rain") {
-    ctx.strokeStyle = "rgba(210,224,234,0.7)";
-    ctx.lineWidth = 2;
-    for (let i = 0; i < 80; i++) {
-      const x = (i * 37) % 1024;
-      const y = (i * 53) % 480;
-      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 8, y + 28); ctx.stroke();
-    }
-  }
   if (isNight) {
     const night = ctx.createLinearGradient(0, 0, 0, 512);
     night.addColorStop(0, "#141a33");
@@ -505,6 +496,17 @@ function paintSky(mode) {
       }
       x += w + 8;
     });
+    ctx.globalAlpha = 1;
+  }
+  if (mode === "rain") {
+    ctx.globalAlpha = 0.75;
+    ctx.strokeStyle = "#d7e7f2";
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 110; i++) {
+      const x = (i * 37) % 1024;
+      const y = (i * 53) % 470;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 10, y + 34); ctx.stroke();
+    }
     ctx.globalAlpha = 1;
   }
   skyTex.needsUpdate = true;
