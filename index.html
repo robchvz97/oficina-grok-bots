@@ -1066,9 +1066,9 @@ function animate() {
   else if (hh > sunsetHour - 0.4) day = (sunsetHour + 0.5 - hh) / 0.9;
   day = Math.max(0, Math.min(1, day));
   sun.intensity = 0.12 + day * weatherDim * 1.15;
-  lamps.forEach(bulb => { bulb.intensity = (1 - day) * 48; });
-  lampMat.emissiveIntensity = (1 - day) * 2.4;
-  fill.intensity = 0.2 + (1 - day) * 1.1;
+  lamps.forEach(bulb => { bulb.intensity = (1 - day) * 14; });
+  lampMat.emissiveIntensity = (1 - day) * 0.8;
+  fill.intensity = 0.2 + (1 - day) * 0.35;
   if (rain.visible) rain.children.forEach(drop => {
     drop.position.y -= drop.userData.speed;
     if (drop.position.y < 0.4) drop.position.y = 6;
