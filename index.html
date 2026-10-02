@@ -376,7 +376,7 @@ const lamps = [];
   const fixture = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.06, 0.28), lampMat);
   fixture.position.set(x, 9.35, 0);
   scene.add(fixture);
-  const bulb = new THREE.PointLight(0xfff1c9, 0, 16);
+  const bulb = new THREE.PointLight(0xfff1c9, 0, 28, 1);
   bulb.position.set(x, 8.8, 0);
   scene.add(bulb);
   lamps.push(bulb);
@@ -1066,8 +1066,9 @@ function animate() {
   else if (hh > sunsetHour - 0.4) day = (sunsetHour + 0.5 - hh) / 0.9;
   day = Math.max(0, Math.min(1, day));
   sun.intensity = 0.12 + day * weatherDim * 1.15;
-  lamps.forEach(bulb => { bulb.intensity = (1 - day) * 1.6; });
-  lampMat.emissiveIntensity = (1 - day) * 1.4;
+  lamps.forEach(bulb => { bulb.intensity = (1 - day) * 48; });
+  lampMat.emissiveIntensity = (1 - day) * 2.4;
+  fill.intensity = 0.2 + (1 - day) * 1.1;
   if (rain.visible) rain.children.forEach(drop => {
     drop.position.y -= drop.userData.speed;
     if (drop.position.y < 0.4) drop.position.y = 6;
