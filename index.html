@@ -58,11 +58,17 @@
 
   #joy { position: fixed; right: 22px; bottom: 28px; width: 128px; height: 128px; border-radius: 50%; background: rgba(28,25,21,0.35); border: 2px solid rgba(255,255,255,0.35); touch-action: none; z-index: 6; }
   #knob { position: absolute; left: 44px; top: 44px; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,250,242,0.9); }
+
+  .hud-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  #hud-hide, #hud-show { border: 0; background: #1c1915; color: #f4efe6; border-radius: 999px; width: 28px; height: 28px; cursor: pointer; }
+  #hud-show { position: fixed; top: 16px; left: 16px; z-index: 6; width: auto; padding: 0 12px; }
+  #hud.hidden { display: none; }
 </style>
 </head>
 <body>
+<button id="hud-show" type="button" hidden>Equipo</button>
 <div id="hud">
-  <h1>Oficina Frutos Chávez</h1>
+  <div class="hud-top"><h1>Oficina Frutos Chávez</h1><button id="hud-hide" type="button" title="Ocultar">—</button></div>
   <p class="sub">Los escritorios estan vacios hasta que tus bots avisen. Pega el aviso en cada uno, con su nombre real.</p>
   <p class="sub" id="live">Buscando señal…</p>
   <div id="roster"></div>
@@ -178,6 +184,11 @@ joyEl.addEventListener("pointermove", e => { if (e.buttons || e.pressure) joyPoi
 function resetJoy() { joy.x = 0; joy.y = 0; knob.style.left = "44px"; knob.style.top = "44px"; }
 joyEl.addEventListener("pointerup", resetJoy);
 joyEl.addEventListener("pointercancel", resetJoy);
+
+const hud = document.getElementById("hud");
+const hudShow = document.getElementById("hud-show");
+document.getElementById("hud-hide").onclick = () => { hud.classList.add("hidden"); hudShow.hidden = false; };
+hudShow.onclick = () => { hud.classList.remove("hidden"); hudShow.hidden = true; };
 const TOPIC = "frutos-chavez-oficina-7f3a9c2e1b84";
 const NTFY = "https://ntfy.sh/" + TOPIC;
 document.getElementById("probar").onclick = () => {
