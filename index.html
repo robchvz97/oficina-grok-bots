@@ -483,15 +483,28 @@ function paintSky(mode) {
     }
   }
   if (isNight) {
-    ctx.fillStyle = "#0b1020";
+    const night = ctx.createLinearGradient(0, 0, 0, 512);
+    night.addColorStop(0, "#141a33");
+    night.addColorStop(0.55, "#1b2438");
+    night.addColorStop(1, "#2a241c");
+    ctx.fillStyle = night;
     ctx.fillRect(0, 0, 1024, 512);
-    const colors = ["#ffe7b0", "#ffd36a", "#b9dcff", "#fff8dc", "#f2c14e", "#ffffff"];
-    for (let i = 0; i < 160; i++) {
-      ctx.globalAlpha = 0.7;
-      ctx.fillStyle = colors[i % colors.length];
-      const w = i % 5 === 0 ? 16 : 8;
-      ctx.fillRect(12 + (i * 41) % 990, 180 + (i * 37) % 300, w, 12);
-    }
+    const heights = [150, 210, 120, 260, 180, 230, 140, 280, 170, 200, 130, 240];
+    let x = 0;
+    heights.forEach((h, i) => {
+      const w = 70 + (i % 3) * 16;
+      ctx.fillStyle = "#12151d";
+      ctx.fillRect(x, 512 - h, w, h);
+      for (let wy = 512 - h + 16; wy < 496; wy += 18) {
+        for (let wx = x + 10; wx < x + w - 10; wx += 16) {
+          if ((wx + wy + i) % 5 === 0) continue;
+          ctx.fillStyle = (wx + i) % 7 === 0 ? "#c9dcff" : "#ffd89a";
+          ctx.globalAlpha = 0.55 + ((wx + wy) % 3) * 0.15;
+          ctx.fillRect(wx, wy, 6, 8);
+        }
+      }
+      x += w + 8;
+    });
     ctx.globalAlpha = 1;
   }
   skyTex.needsUpdate = true;
