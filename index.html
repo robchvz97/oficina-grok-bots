@@ -337,13 +337,6 @@ async function pull() {
 }
 pull();
 setInterval(pull, 4000);
-paintBoard();
-setInterval(paintBoard, 60000);
-document.getElementById('pedidos').addEventListener('input', () => {
-  const info = orderDate();
-  saveOrders(info.key, document.getElementById('pedidos').value.split('\n').map(s => s.trim()).filter(Boolean));
-  paintBoard();
-});
 
 if (!window.THREE) {
   document.getElementById("live").textContent = "No cargó el motor 3D. Recarga la página.";
@@ -506,6 +499,13 @@ function paintBoard() {
   if (cap) cap.textContent = info.label + " · " + info.key;
   if (box && document.activeElement !== box) box.value = names.join("\n");
 }
+paintBoard();
+setInterval(paintBoard, 60000);
+document.getElementById('pedidos').addEventListener('input', () => {
+  const info = orderDate();
+  saveOrders(info.key, document.getElementById('pedidos').value.split('\n').map(s => s.trim()).filter(Boolean));
+  paintBoard();
+});
 const desks = [
   { x: -3.4, z: -2.2, rot: 0 },
   { x: 3.5, z: -2.2, rot: 0 },
