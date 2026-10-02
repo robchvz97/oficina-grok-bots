@@ -296,7 +296,7 @@ function applyRemote(list) {
     slot.name = name;
     slot.role = remote.task || remote.role || slot.role;
     slot.status = remote.status || "trabajando";
-    slot.task = remote.task || "";
+    slot.task = remote.task || remote.message || "";
   });
   save();
   renderRoster();
@@ -1118,6 +1118,21 @@ function setMurmur(on, t) {
   v.filter.frequency.setTargetAtTime(380 + syllable * 420, v.ctx.currentTime, 0.08);
 }
 const clock = new THREE.Clock();
+
+const spoken = {};
+function speakNear(bot) {
+  const textToSay = String(bot.task || "").trim();
+  if (!textToSay || !window.speechSynthesis) return;
+  if (spoken[bot.name] === textToSay) return;
+  spoken[bot.name] = textToSay;
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(bot.name + " dice: " + textToSay);
+  utter.lang = "es-MX";
+  utter.rate = 1;
+  const voice = window.speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith("es"));
+  if (voice) utter.voice = voice;
+  window.speechSynthesis.speak(utter);
+}
 function animate() {
   requestAnimationFrame(animate);
   const t = clock.getElapsedTime();
@@ -1155,6 +1170,12 @@ function animate() {
   camera.position.z = camTarget.z + Math.cos(yaw) * dist * Math.cos(pitch * 0.35);
   camera.position.y = 1.4 + dist * Math.sin(pitch) * 0.45;
   camera.lookAt(camTarget);
+  actors.forEach(a => {
+    const dx = camTarget.x - a.person.position.x;
+    const dz = camTarget.z - a.person.position.z;
+    if (Math.hypot(dx, dz) < 2.2) speakNear(a.bot);
+    else if (spoken[a.bot.name]) spoken[a.bot.name] = "";
+  });
 
   actors.forEach((a, i) => {
     const status = a.bot.status;
