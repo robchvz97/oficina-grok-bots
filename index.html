@@ -43,7 +43,6 @@
   }
   .row { display: grid; grid-template-columns: 1.1fr .9fr; gap: 6px; }
   #clima { position: fixed; left: 16px; bottom: 58px; z-index: 2; color: #f4efe6; font-size: 12px; text-shadow: 0 1px 4px #000; pointer-events: none; }
-  #voz { position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%); z-index: 2; max-width: 80vw; text-align: center; color: #f4efe6; font-size: 14px; text-shadow: 0 1px 4px #000; pointer-events: none; }
   #murmur-note { position: fixed; top: 16px; right: 16px; z-index: 2; pointer-events: none; background: rgba(28,25,21,.8); color: #f4efe6; border-radius: 999px; padding: 6px 10px; font-size: 12px; }
   #hint {
     position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
@@ -92,7 +91,6 @@
 <div id="clock"></div>
 <div id="hint">W adelante · S atras · A izquierda · D derecha · en el celular usa el joystick</div>
 <div id="clima"></div>
-<div id="voz"></div>
 <div id="murmur-note" hidden>Murmurando</div>
 <div id="look"><div id="look-knob"></div></div>
 <div id="joy"><div id="knob"></div></div>
@@ -1138,9 +1136,6 @@ function speakNear(bot) {
   utter.rate = tune.rate;
   const voices = window.speechSynthesis.getVoices().filter(v => v.lang && v.lang.toLowerCase().startsWith("es"));
   if (voices.length) utter.voice = voices[0];
-  const cap = document.getElementById("voz");
-  if (cap) cap.textContent = line;
-  utter.onend = () => { if (cap && cap.textContent === line) cap.textContent = ""; };
   window.speechSynthesis.speak(utter);
 }
 function animate() {
