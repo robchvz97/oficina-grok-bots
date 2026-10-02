@@ -81,6 +81,8 @@
   <p class="sub">Los escritorios estan vacios hasta que tus bots avisen. Pega el aviso en cada uno, con su nombre real.</p>
   <p class="sub" id="live">Buscando señal…</p>
   <div id="roster"></div>
+  <p class="sub" id="pedidos-cap">Pedidos</p>
+  <textarea id="pedidos" rows="5" placeholder="Un cliente por linea"></textarea>
   <button class="link" id="probar" type="button">Probar señal</button>
   <button class="link" id="probar-sonido" type="button">Probar sonido</button>
   <button class="link" id="reset" type="button">Vaciar la sala</button>
@@ -330,6 +332,13 @@ async function pull() {
 }
 pull();
 setInterval(pull, 4000);
+paintBoard();
+setInterval(paintBoard, 60000);
+document.getElementById('pedidos').addEventListener('input', () => {
+  const info = orderDate();
+  saveOrders(info.key, document.getElementById('pedidos').value.split('\n').map(s => s.trim()).filter(Boolean));
+  paintBoard();
+});
 
 if (!window.THREE) {
   document.getElementById("live").textContent = "No cargó el motor 3D. Recarga la página.";
@@ -436,6 +445,62 @@ new THREE.TextureLoader().load("logo.jpg?v=2", function (tex) {
   logoMat.needsUpdate = true;
 });
 
+
+const boardCanvas = document.createElement("canvas");
+boardCanvas.width = 640; boardCanvas.height = 900;
+const boardCtx = boardCanvas.getContext("2d");
+const boardTex = new THREE.CanvasTexture(boardCanvas);
+const board = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 3.1), new THREE.MeshBasicMaterial({ map: boardTex, side: THREE.DoubleSide }));
+board.position.set(7.55, 2.15, 1.8);
+board.rotation.y = -Math.PI / 2;
+scene.add(board);
+const boardFrame = new THREE.Mesh(new THREE.BoxGeometry(0.06, 3.25, 2.35), new THREE.MeshStandardMaterial({ color: 0x6b4428 }));
+boardFrame.position.set(7.62, 2.15, 1.8);
+scene.add(boardFrame);
+function orderDate() {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", hourCycle: "h23" }).formatToParts(new Date());
+  const get = t => parts.find(p => p.type === t).value;
+  let y = Number(get("year")), m = Number(get("month")), d = Number(get("day")), h = Number(get("hour"));
+  const tomorrow = h >= 22;
+  if (tomorrow) {
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    dt.setUTCDate(dt.getUTCDate() + 1);
+    y = dt.getUTCFullYear(); m = dt.getUTCMonth() + 1; d = dt.getUTCDate();
+  }
+  const key = y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+  return { key, tomorrow, label: tomorrow ? "Pedidos de manana" : "Pedidos de hoy" };
+}
+function loadOrders(key) {
+  try { return JSON.parse(localStorage.getItem("oficina-pedidos") || "{}")[key] || []; }
+  catch (e) { return []; }
+}
+function saveOrders(key, names) {
+  const all = JSON.parse(localStorage.getItem("oficina-pedidos") || "{}");
+  all[key] = names;
+  localStorage.setItem("oficina-pedidos", JSON.stringify(all));
+}
+function paintBoard() {
+  const info = orderDate();
+  const names = loadOrders(info.key);
+  const ctx = boardCtx;
+  ctx.fillStyle = "#f7f1dc";
+  ctx.fillRect(0, 0, 640, 900);
+  ctx.strokeStyle = "#d7c7a2";
+  for (let y = 70; y < 900; y += 46) { ctx.beginPath(); ctx.moveTo(24, y); ctx.lineTo(616, y); ctx.stroke(); }
+  ctx.fillStyle = "#2a2118";
+  ctx.font = "700 40px Segoe UI, sans-serif";
+  ctx.fillText(info.label, 28, 52);
+  ctx.font = "400 24px Segoe UI, sans-serif";
+  ctx.fillText(info.key, 28, 86);
+  ctx.font = "400 32px Segoe UI, sans-serif";
+  if (!names.length) ctx.fillText("Sin clientes cargados", 28, 150);
+  names.slice(0, 16).forEach((name, i) => ctx.fillText((i + 1) + ". " + name, 28, 150 + i * 46));
+  boardTex.needsUpdate = true;
+  const box = document.getElementById("pedidos");
+  const cap = document.getElementById("pedidos-cap");
+  if (cap) cap.textContent = info.label + " · " + info.key;
+  if (box && document.activeElement !== box) box.value = names.join("\n");
+}
 const desks = [
   { x: -3.4, z: -2.2, rot: 0 },
   { x: 3.5, z: -2.2, rot: 0 },
