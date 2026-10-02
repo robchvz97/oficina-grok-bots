@@ -60,15 +60,18 @@
   #knob { position: absolute; left: 44px; top: 44px; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,250,242,0.9); }
 
   .hud-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  #hud-hide, #hud-show { border: 0; background: #1c1915; color: #f4efe6; border-radius: 999px; width: 28px; height: 28px; cursor: pointer; }
+  #hud-hide, #hud-show, #hud-refresh, #hud-refresh-out { border: 0; background: #1c1915; color: #f4efe6; border-radius: 999px; width: 28px; height: 28px; cursor: pointer; }
   #hud-show { position: fixed; top: 16px; left: 16px; z-index: 6; width: auto; padding: 0 12px; }
+  #hud-refresh-out { position: fixed; top: 16px; left: 92px; z-index: 6; }
+  .hud-top span { display: flex; gap: 6px; }
   #hud.hidden { display: none; }
 </style>
 </head>
 <body>
 <button id="hud-show" type="button" hidden>Equipo</button>
+<button id="hud-refresh-out" type="button" title="Actualizar">↻</button>
 <div id="hud">
-  <div class="hud-top"><h1>Oficina Frutos Chávez</h1><button id="hud-hide" type="button" title="Ocultar">—</button></div>
+  <div class="hud-top"><h1>Oficina Frutos Chávez</h1><span><button id="hud-refresh" type="button" title="Actualizar">↻</button><button id="hud-hide" type="button" title="Ocultar">—</button></span></div>
   <p class="sub">Los escritorios estan vacios hasta que tus bots avisen. Pega el aviso en cada uno, con su nombre real.</p>
   <p class="sub" id="live">Buscando señal…</p>
   <div id="roster"></div>
@@ -188,6 +191,8 @@ joyEl.addEventListener("pointercancel", resetJoy);
 const hud = document.getElementById("hud");
 const hudShow = document.getElementById("hud-show");
 document.getElementById("hud-hide").onclick = () => { hud.classList.add("hidden"); hudShow.hidden = false; };
+document.getElementById("hud-refresh").onclick = () => location.reload();
+document.getElementById("hud-refresh-out").onclick = () => location.reload();
 hudShow.onclick = () => { hud.classList.remove("hidden"); hudShow.hidden = true; };
 const TOPIC = "frutos-chavez-oficina-7f3a9c2e1b84";
 const NTFY = "https://ntfy.sh/" + TOPIC;
@@ -761,7 +766,7 @@ const clock = new THREE.Clock();
 function animate() {
   requestAnimationFrame(animate);
   const t = clock.getElapsedTime();
-  const forward = (keys.s || keys.arrowdown ? 1 : 0) - (keys.w || keys.arrowup ? 1 : 0) + joy.y;
+  const forward = (keys.s || keys.arrowdown ? 1 : 0) - (keys.w || keys.arrowup ? 1 : 0) - joy.y;
   const strafe = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0) + joy.x;
   if (forward || strafe) focus = null;
   const lookX = Math.sin(yaw);
