@@ -42,6 +42,7 @@
     border-radius: 8px; padding: 6px 8px; font: inherit; font-size: 13px;
   }
   .row { display: grid; grid-template-columns: 1.1fr .9fr; gap: 6px; }
+  #murmur-note { position: fixed; top: 16px; right: 16px; z-index: 6; background: rgba(28,25,21,.8); color: #f4efe6; border-radius: 999px; padding: 6px 10px; font-size: 12px; }
   #hint {
     position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
     z-index: 2; font-size: 12px; letter-spacing: .04em;
@@ -85,6 +86,7 @@
 </div>
 <div id="clock"></div>
 <div id="hint">W adelante · S atras · A izquierda · D derecha · en el celular usa el joystick</div>
+<div id="murmur-note" hidden>Murmurando</div>
 <div id="look"><div id="look-knob"></div></div>
 <div id="joy"><div id="knob"></div></div>
 <script src="three.min.js"></script>
@@ -842,7 +844,10 @@ function keepOut(pos, radius) {
 
 let murmur = null;
 function unlockMurmur() {
-  if (murmur) return;
+  if (murmur) {
+    if (murmur.ctx.state === "suspended") murmur.ctx.resume();
+    return;
+  }
   const ctx = new (window.AudioContext || window.webkitAudioContext)();
   const buffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
   const data = buffer.getChannelData(0);
@@ -852,24 +857,37 @@ function unlockMurmur() {
   noise.loop = true;
   const filter = ctx.createBiquadFilter();
   filter.type = "bandpass";
-  filter.frequency.value = 420;
-  filter.Q.value = 0.7;
+  filter.frequency.value = 280;
+  filter.Q.value = 0.6;
+  const voice = ctx.createOscillator();
+  voice.type = "triangle";
+  voice.frequency.value = 140;
+  const voiceGain = ctx.createGain();
+  voiceGain.gain.value = 0.35;
   const gain = ctx.createGain();
   gain.gain.value = 0;
   noise.connect(filter);
   filter.connect(gain);
+  voice.connect(voiceGain);
+  voiceGain.connect(gain);
   gain.connect(ctx.destination);
   noise.start();
-  murmur = { ctx, gain, filter };
+  voice.start();
+  murmur = { ctx, gain, filter, voice };
+  ctx.resume();
 }
-window.addEventListener("pointerdown", unlockMurmur, { once: true });
-window.addEventListener("keydown", unlockMurmur, { once: true });
+window.addEventListener("pointerdown", unlockMurmur);
+window.addEventListener("keydown", unlockMurmur);
 function setMurmur(on, t) {
+  const note = document.getElementById("murmur-note");
+  if (note) note.hidden = !on;
   if (!murmur) return;
   if (murmur.ctx.state === "suspended") murmur.ctx.resume();
-  const target = on ? 0.045 : 0;
-  murmur.gain.gain.setTargetAtTime(target, murmur.ctx.currentTime, 0.4);
-  if (on) murmur.filter.frequency.setTargetAtTime(360 + Math.sin(t * 1.7) * 80, murmur.ctx.currentTime, 0.3);
+  murmur.gain.gain.setTargetAtTime(on ? 0.22 : 0, murmur.ctx.currentTime, 0.25);
+  if (on) {
+    murmur.filter.frequency.setTargetAtTime(240 + Math.sin(t * 3) * 90, murmur.ctx.currentTime, 0.2);
+    murmur.voice.frequency.setTargetAtTime(110 + Math.sin(t * 5) * 25, murmur.ctx.currentTime, 0.2);
+  }
 }
 const clock = new THREE.Clock();
 function animate() {
