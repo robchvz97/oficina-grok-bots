@@ -714,6 +714,31 @@ function planRest(resting, t) {
   restPlan = { at: t, key: key, map: map };
   return map;
 }
+const solids = [
+  { x: -3.4, z: -2.2, hx: 0.95, hz: 0.42 },
+  { x: 3.5, z: -2.2, hx: 0.95, hz: 0.42 },
+  { x: -3.4, z: 2.8, hx: 0.95, hz: 0.42 },
+  { x: 3.5, z: 2.8, hx: 0.95, hz: 0.42 },
+  { x: 0, z: 0.4, hx: 0.75, hz: 1.25 },
+  { x: 7.5, z: 4.4, hx: 0.5, hz: 0.55 },
+  { x: -6.5, z: 5.2, hx: 0.4, hz: 0.4 }
+];
+function keepOut(pos, radius) {
+  pos.x = Math.max(-7.35, Math.min(7.35, pos.x));
+  pos.z = Math.max(-6.35, Math.min(6.35, pos.z));
+  solids.forEach(s => {
+    const dx = pos.x - s.x;
+    const dz = pos.z - s.z;
+    const hx = s.hx + radius;
+    const hz = s.hz + radius;
+    if (Math.abs(dx) < hx && Math.abs(dz) < hz) {
+      const ox = hx - Math.abs(dx);
+      const oz = hz - Math.abs(dz);
+      if (ox < oz) pos.x += dx < 0 ? -ox : ox;
+      else pos.z += dz < 0 ? -oz : oz;
+    }
+  });
+}
 const clock = new THREE.Clock();
 function animate() {
   requestAnimationFrame(animate);
@@ -728,8 +753,7 @@ function animate() {
   const speed = 0.12;
   roam.x += (lookX * forward + rightX * strafe) * speed;
   roam.z += (lookZ * forward + rightZ * strafe) * speed;
-  roam.x = Math.max(-7.2, Math.min(7.2, roam.x));
-  roam.z = Math.max(-6.2, Math.min(6.2, roam.z));
+  keepOut(roam, 0.35);
   const camTarget = focus ? focus.person.position.clone() : new THREE.Vector3(roam.x, 1.1, roam.z);
   camTarget.y = 1.1;
   camera.position.x = camTarget.x + Math.sin(yaw) * dist * Math.cos(pitch * 0.35);
@@ -853,6 +877,7 @@ function animate() {
       }
     }
   }
+  actors.forEach(a => keepOut(a.person.position, 0.28));
   renderer.render(scene, camera);
 }
 animate();
