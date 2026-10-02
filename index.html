@@ -296,20 +296,22 @@ for (let i = -4; i <= 4; i++) box(0.045, 2.85, 0.045, 0xd9dde2, i * 1.15, 2.35, 
 box(10.6, 0.06, 0.06, 0xd9dde2, 0.2, 3.75, -6.86);
 box(10.6, 0.06, 0.06, 0xd9dde2, 0.2, 0.75, -6.86);
 
-const logoFrame = new THREE.Mesh(new THREE.BoxGeometry(3.4, 2.15, 0.06), new THREE.MeshStandardMaterial({ color: 0xf7f4ee }));
-logoFrame.position.set(7.78, 2.35, -1.4);
-logoFrame.rotation.y = Math.PI / 2;
-scene.add(logoFrame);
-const logoBorder = new THREE.Mesh(new THREE.BoxGeometry(3.55, 2.3, 0.04), new THREE.MeshStandardMaterial({ color: 0xc5a46a, metalness: 0.4, roughness: 0.35 }));
-logoBorder.position.set(7.82, 2.35, -1.4);
-logoBorder.rotation.y = Math.PI / 2;
-scene.add(logoBorder);
-const logoMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-const logo = new THREE.Mesh(new THREE.PlaneGeometry(3.15, 1.9), logoMat);
-logo.position.set(7.72, 2.35, -1.4);
-logo.rotation.y = Math.PI / 2;
+const logoMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+const logo = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 1.7), logoMat);
+logo.position.set(7.55, 2.4, -1.6);
+logo.rotation.y = -Math.PI / 2;
 scene.add(logo);
-new THREE.TextureLoader().load("logo.jpg", function (tex) {
+const gold = new THREE.MeshStandardMaterial({ color: 0xc5a46a, metalness: 0.45, roughness: 0.35 });
+const topBar = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.08, 3.05), gold);
+topBar.position.set(7.62, 3.28, -1.6);
+const botBar = topBar.clone();
+botBar.position.y = 1.52;
+const sideBar = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.84, 0.08), gold);
+sideBar.position.set(7.62, 2.4, -3.08);
+const sideBar2 = sideBar.clone();
+sideBar2.position.z = -0.12;
+scene.add(topBar, botBar, sideBar, sideBar2);
+new THREE.TextureLoader().load("logo.jpg?v=2", function (tex) {
   if (tex.colorSpace !== undefined && THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
   logoMat.map = tex;
   logoMat.needsUpdate = true;
@@ -674,14 +676,9 @@ function planRest(resting, t) {
     names[n] = names[j];
     names[j] = tmp;
   }
+  const acts = ["sleep", "play", "chat", "ping"];
   const map = {};
-  let n = 0;
-  if (names.length >= 2) {
-    const pingCount = names.length >= 4 && Math.random() < 0.75 ? 4 : 2;
-    for (; n < pingCount && n < names.length; n++) map[names[n]] = "ping";
-  }
-  const restActs = ["sleep", "play", "chat"];
-  for (; n < names.length; n++) map[names[n]] = restActs[Math.floor(Math.random() * restActs.length)];
+  names.forEach(name => { map[name] = acts[Math.floor(Math.random() * acts.length)]; });
   restPlan = { at: t, key: key, map: map };
   return map;
 }
