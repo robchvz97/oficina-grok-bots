@@ -144,7 +144,31 @@ document.getElementById("reset").onclick = () => {
   bots = DEFAULTS.map(b => ({ ...b, task: "" }));
   save();
   renderRoster();
-  actors.forEach(a => a.setLabel());
+  
+const FACES = { nigoo: "faces/nigoo.jpg", muller: "faces/muller.jpg", gori: "faces/gori.jpg", gustav: "faces/gustav.jpg" };
+function setFace(actor) {
+  const key = String(actor.bot.name || "").toLowerCase();
+  const look = LOOKS[key];
+  const head = actor.person.userData.head;
+  const hair = actor.person.userData.hair;
+  const shirt = actor.person.userData.shirt;
+  if (look && shirt) shirt.color.setHex(look.shirt);
+  if (!FACES[key]) {
+    actor.face.visible = false;
+    if (head) head.visible = true;
+    if (hair) hair.visible = true;
+    return;
+  }
+  new THREE.TextureLoader().load(FACES[key], function (tex) {
+    if (tex.colorSpace !== undefined && THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
+    actor.face.material.map = tex;
+    actor.face.material.needsUpdate = true;
+    actor.face.visible = true;
+    if (head) head.visible = false;
+    if (hair) hair.visible = false;
+  });
+}
+actors.forEach(a => a.setLabel());
   fetch("/api/estado", { method: "POST", headers: { "Content-Type": "application/json" }, body: "[]" }).catch(() => {});
 };
 const TOPIC = "frutos-chavez-oficina-7f3a9c2e1b84";
@@ -358,6 +382,12 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
+const LOOKS = {
+  nigoo: { shirt: 0xd9902a, hair: 0x2a2118, beard: true },
+  muller: { shirt: 0x3d6fbf, hair: 0x6a4632, beard: false },
+  gori: { shirt: 0x8a5a32, hair: 0x6b4a30, beard: false },
+  gustav: { shirt: 0x1e3a5f, hair: null, beard: false, glasses: true }
+};
 function makePerson(color) {
   const g = new THREE.Group();
   const skin = 0xf0c7a4;
@@ -382,6 +412,9 @@ function makePerson(color) {
   armR.position.set(0.28, 1.02, 0);
   g.add(body, head, hair, legL, legR, armL, armR);
   g.userData.limbs = { legL, legR, armL, armR, body };
+  g.userData.head = head;
+  g.userData.hair = hair;
+  g.userData.shirt = shirt;
   return g;
 }
 
@@ -403,14 +436,21 @@ const actors = bots.map((b, i) => {
   const bubble = makeBubble();
   bubble.position.set(0.35, 1.55, 0);
   person.add(bubble);
+  const faceMat = new THREE.SpriteMaterial({ transparent: true, depthWrite: false });
+  const face = new THREE.Sprite(faceMat);
+  face.position.set(0, 1.42, 0.02);
+  face.scale.set(0.62, 0.62, 1);
+  face.visible = false;
+  person.add(face);
   return {
     bot: b,
     person,
     label,
     bubble,
+    face,
     home: home[i],
     phase: i * 1.3,
-    setLabel() { paintLabel(label, b.name, b.role); }
+    setLabel() { paintLabel(label, b.name, b.role); setFace(this); }
   };
 });
 actors.forEach(a => a.setLabel());
