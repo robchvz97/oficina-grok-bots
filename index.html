@@ -462,7 +462,8 @@ const skySide = new THREE.Mesh(new THREE.PlaneGeometry(10.2, 5.5), skyMat);
 skySide.position.set(-7.72, 3.5, 0.6);
 skySide.rotation.y = Math.PI / 2;
 scene.add(skySide);
-function paintSky(mode) {
+function paintSky(mode, t) {
+  t = t || 0;
   const ctx = skyCtx;
   const g = ctx.createLinearGradient(0, 0, 0, 512);
   if (mode === "rain") { g.addColorStop(0, "#6d7882"); g.addColorStop(1, "#3e4650"); }
@@ -477,7 +478,7 @@ function paintSky(mode) {
   const puff = mode === "clear" ? 4 : 9;
   for (let i = 0; i < puff; i++) {
     ctx.fillStyle = mode === "rain" ? "rgba(70,78,86,0.85)" : mode === "cloud" ? "rgba(236,240,244,0.9)" : "rgba(255,255,255,0.85)";
-    const x = 80 + i * 110;
+    const x = ((80 + i * 110 + t * (mode === "clear" ? 18 : 10)) % 1200) - 80;
     const y = mode === "clear" ? 300 : 140 + (i % 3) * 70;
     ctx.beginPath(); ctx.ellipse(x, y, 90, 42, 0, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.ellipse(x + 50, y - 18, 60, 36, 0, 0, Math.PI * 2); ctx.fill();
@@ -506,6 +507,18 @@ function paintSky(mode) {
       x += w + 8;
     });
     ctx.globalAlpha = 1;
+  } else {
+    ctx.strokeStyle = "#243044";
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 5; i++) {
+      const x = ((t * 40 + i * 220) % 1200) - 80;
+      const y = 70 + (i % 3) * 46 + Math.sin(t + i) * 8;
+      ctx.beginPath();
+      ctx.moveTo(x - 8, y + 4);
+      ctx.lineTo(x, y);
+      ctx.lineTo(x + 8, y + 4);
+      ctx.stroke();
+    }
   }
   if (mode === "rain") {
     ctx.globalAlpha = 0.75;
@@ -1472,7 +1485,8 @@ function animate() {
   else if (hh > sunsetHour - 0.4) day = (sunsetHour + 0.5 - hh) / 0.9;
   day = Math.max(0, Math.min(1, day));
   const nightNow = day < 0.35;
-  if (nightNow !== isNight) { isNight = nightNow; paintSky(skyMode); }
+  if (nightNow !== isNight) { isNight = nightNow; paintSky(skyMode, t); }
+  if (!isNight && Math.floor(t * 8) !== Math.floor((t - 0.016) * 8)) paintSky(skyMode, t);
   sun.intensity = 0.12 + day * weatherDim * 1.15;
   lamps.forEach(item => { if (item.isLight) item.intensity = (1 - day) * 14; else item.material.opacity = (1 - day) * 0.22; });
   lampMat.emissiveIntensity = (1 - day) * 0.8;
