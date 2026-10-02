@@ -492,7 +492,7 @@ function paintBoard() {
   ctx.fillText(info.key, 28, 86);
   ctx.font = "400 32px Segoe UI, sans-serif";
   if (!names.length) ctx.fillText("Sin clientes cargados", 28, 150);
-  names.slice(0, 16).forEach((name, i) => ctx.fillText((i + 1) + ". " + name, 28, 150 + i * 46));
+  names.slice(0, 16).forEach((name, i) => ctx.fillText((i + 1) + ". " + String(name).replace(/^\d+[\.\)\-]\s*/, ""), 28, 150 + i * 46));
   boardTex.needsUpdate = true;
   const box = document.getElementById("pedidos");
   const cap = document.getElementById("pedidos-cap");
