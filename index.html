@@ -68,7 +68,7 @@
 </div>
 <div id="clock"></div>
 <div id="hint">Arrastra para girar · rueda para acercar · clic en un bot para enfocarlo</div>
-<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+<script src="three.min.js"></script>
 <script>
 const DEFAULTS = [
   { id: "pedidos", name: "Pedidos", role: "Captura mayoreo", status: "trabajando", color: 0xe07a2f, accent: "#e07a2f" },
@@ -207,6 +207,10 @@ async function pull() {
 pull();
 setInterval(pull, 4000);
 
+if (!window.THREE) {
+  document.getElementById("live").textContent = "No cargó el motor 3D. Recarga la página.";
+  throw new Error("three missing");
+}
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x1a1714);
 scene.fog = new THREE.Fog(0x1a1714, 18, 36);
