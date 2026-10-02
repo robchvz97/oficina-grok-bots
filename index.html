@@ -318,9 +318,12 @@ async function pull() {
         since = Math.max(since, (msg.time || 0) + 1);
         if (msg.event !== "message") return;
         const payload = JSON.parse(msg.message);
-        if (payload && Array.isArray(payload.names)) {
+        if (payload && (Array.isArray(payload.orders) || Array.isArray(payload.names))) {
           const key = payload.date || orderDate().key;
-          saveOrders(key, payload.names.map(s => String(s).trim()).filter(Boolean));
+          const orders = Array.isArray(payload.orders)
+            ? payload.orders.map(item => ({ name: String(item.name || item.cliente || "").trim(), kg: item.kg, total: item.total != null ? item.total : item.pesos })).filter(item => item.name)
+            : payload.names.map(s => ({ name: String(s).trim() })).filter(item => item.name);
+          saveOrders(key, orders);
           paintBoard();
         }
         if (payload && (payload.sales != null || payload.total != null)) {
@@ -637,12 +640,20 @@ function paintBoard() {
   ctx.fillText(info.key, 28, 86);
   ctx.font = "400 32px Segoe UI, sans-serif";
   if (!names.length) ctx.fillText("Sin clientes cargados", 28, 150);
-  names.slice(0, 16).forEach((name, i) => ctx.fillText((i + 1) + ". " + String(name).replace(/^\d+[\.\)\-]\s*/, ""), 28, 150 + i * 46));
+  names.slice(0, 14).forEach((item, i) => {
+    const name = String(item.name || item).replace(/^\d+[\.\)\-]\s*/, "");
+    const kg = item.kg != null ? item.kg + " kg" : "";
+    const money = item.total != null ? "$" + Number(item.total).toLocaleString("es-MX") : "";
+    ctx.fillText((i + 1) + ". " + name, 28, 150 + i * 50);
+    ctx.font = "400 24px Segoe UI, sans-serif";
+    ctx.fillText([kg, money].filter(Boolean).join("   "), 56, 174 + i * 50);
+    ctx.font = "400 32px Segoe UI, sans-serif";
+  });
   boardTex.needsUpdate = true;
   const box = document.getElementById("pedidos");
   const cap = document.getElementById("pedidos-cap");
   if (cap) cap.textContent = info.label + " · " + info.key;
-  if (box && document.activeElement !== box) box.value = names.join("\n");
+  if (box && document.activeElement !== box) box.value = names.map(item => item.name ? [item.name, item.kg != null ? item.kg + " kg" : "", item.total != null ? "$" + item.total : ""].filter(Boolean).join(" ") : item).join("\n");
 }
 paintBoard();
 setInterval(paintBoard, 60000);
