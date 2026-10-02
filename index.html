@@ -422,7 +422,7 @@ box(0.22, 9.6, 14, 0xe7d3b0, 8, 4.8, 0);
 box(16, 9.6, 0.18, 0xecdcc0, 0, 4.8, -7);
 box(16, 0.12, 14.2, 0xf3ead8, 0, 9.6, 0, { roughness: 0.85 });
 
-const glassMat = new THREE.MeshStandardMaterial({ color: 0xb7d4e4, emissive: 0x1d4e6a, emissiveIntensity: 0.35, roughness: 0.08, metalness: 0.25, transparent: true, opacity: 0.72 });
+const glassMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x9bb7c8, emissiveIntensity: 0.05, roughness: 0.05, metalness: 0.05, transparent: true, opacity: 0.16 });
 const frameMat = new THREE.MeshStandardMaterial({ color: 0xd9dde2, metalness: 0.65, roughness: 0.25 });
 function pane(w, h, x, y, z, rotY) {
   const g = new THREE.Mesh(new THREE.PlaneGeometry(w, h), glassMat);
@@ -431,14 +431,58 @@ function pane(w, h, x, y, z, rotY) {
   scene.add(g);
   return g;
 }
-pane(10.4, 5.6, 0.2, 3.6, -6.9, 0);
+pane(10.4, 5.6, 0.2, 3.6, -6.78, 0);
+const skyCanvas = document.createElement("canvas");
+skyCanvas.width = 1024; skyCanvas.height = 512;
+const skyCtx = skyCanvas.getContext("2d");
+const skyTex = new THREE.CanvasTexture(skyCanvas);
+const skyMat = new THREE.MeshBasicMaterial({ map: skyTex });
+const skyBack = new THREE.Mesh(new THREE.PlaneGeometry(10.6, 5.7), skyMat);
+skyBack.position.set(0.2, 3.6, -6.92);
+scene.add(skyBack);
+const skySide = new THREE.Mesh(new THREE.PlaneGeometry(10.2, 5.5), skyMat);
+skySide.position.set(-7.92, 3.5, 0.6);
+skySide.rotation.y = Math.PI / 2;
+scene.add(skySide);
+function paintSky(mode) {
+  const ctx = skyCtx;
+  const g = ctx.createLinearGradient(0, 0, 0, 512);
+  if (mode === "rain") { g.addColorStop(0, "#6d7882"); g.addColorStop(1, "#3e4650"); }
+  else if (mode === "cloud") { g.addColorStop(0, "#b7c3ce"); g.addColorStop(1, "#8b98a6"); }
+  else { g.addColorStop(0, "#7ec8f0"); g.addColorStop(1, "#d7f0ff"); }
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 1024, 512);
+  if (mode === "clear") {
+    ctx.fillStyle = "#ffe38a";
+    ctx.beginPath(); ctx.arc(760, 120, 48, 0, Math.PI * 2); ctx.fill();
+  }
+  const puff = mode === "clear" ? 4 : 9;
+  for (let i = 0; i < puff; i++) {
+    ctx.fillStyle = mode === "rain" ? "rgba(70,78,86,0.85)" : mode === "cloud" ? "rgba(236,240,244,0.9)" : "rgba(255,255,255,0.85)";
+    const x = 80 + i * 110;
+    const y = mode === "clear" ? 300 : 140 + (i % 3) * 70;
+    ctx.beginPath(); ctx.ellipse(x, y, 90, 42, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(x + 50, y - 18, 60, 36, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  if (mode === "rain") {
+    ctx.strokeStyle = "rgba(210,224,234,0.7)";
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 80; i++) {
+      const x = (i * 37) % 1024;
+      const y = (i * 53) % 480;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 8, y + 28); ctx.stroke();
+    }
+  }
+  skyTex.needsUpdate = true;
+}
+paintSky("cloud");
 const rain = new THREE.Group();
-const dropGeo = new THREE.BoxGeometry(0.02, 0.32, 0.02);
-const dropMat = new THREE.MeshBasicMaterial({ color: 0xd7e8f4, transparent: true, opacity: 0.55 });
-for (let i = 0; i < 180; i++) {
+const dropGeo = new THREE.BoxGeometry(0.035, 0.55, 0.035);
+const dropMat = new THREE.MeshBasicMaterial({ color: 0xe7f4ff, transparent: true, opacity: 0.9 });
+for (let i = 0; i < 260; i++) {
   const drop = new THREE.Mesh(dropGeo, dropMat);
-  drop.position.set(-5.2 + Math.random() * 10.4, Math.random() * 6, -6.55);
-  drop.userData.speed = 0.08 + Math.random() * 0.1;
+  drop.position.set(-5.2 + Math.random() * 10.4, Math.random() * 6.2, -6.5);
+  drop.userData.speed = 0.12 + Math.random() * 0.12;
   rain.add(drop);
 }
 rain.visible = false;
@@ -457,17 +501,15 @@ async function loadWeather() {
       sunriseHour = rise.getHours() + rise.getMinutes() / 60;
       sunsetHour = set.getHours() + set.getMinutes() / 60;
     }
+    glassMat.opacity = 0.14;
     if (raining) {
-      glassMat.color.setHex(0x8aa0ae);
-      glassMat.emissiveIntensity = 0.12;
+      paintSky("rain");
       weatherDim = 0.45;
     } else if (clouds > 60 || code === 45 || code === 48) {
-      glassMat.color.setHex(0xa9b7c2);
-      glassMat.emissiveIntensity = 0.2;
+      paintSky("cloud");
       weatherDim = 0.65;
     } else {
-      glassMat.color.setHex(0xcfe6f4);
-      glassMat.emissiveIntensity = 0.5;
+      paintSky("clear");
       weatherDim = 1;
     }
     const note = document.getElementById("clima");
