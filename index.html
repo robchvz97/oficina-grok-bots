@@ -619,26 +619,31 @@ document.getElementById('pedidos').addEventListener('input', () => {
 });
 
 const wallClockCanvas = document.createElement("canvas");
-wallClockCanvas.width = 640; wallClockCanvas.height = 240;
+wallClockCanvas.width = 640; wallClockCanvas.height = 320;
 const wallClockCtx = wallClockCanvas.getContext("2d");
 const wallClockTex = new THREE.CanvasTexture(wallClockCanvas);
-const wallClock = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.68), new THREE.MeshBasicMaterial({ map: wallClockTex }));
+const wallClock = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.9), new THREE.MeshBasicMaterial({ map: wallClockTex }));
 wallClock.position.set(7.55, 4.7, -4.2);
 wallClock.rotation.y = -Math.PI / 2;
 scene.add(wallClock);
-const wallClockFrame = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.78, 1.95), new THREE.MeshStandardMaterial({ color: 0x1c1915 }));
+const wallClockFrame = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.02, 1.95), new THREE.MeshStandardMaterial({ color: 0x1c1915 }));
 wallClockFrame.position.set(7.6, 4.7, -4.2);
 scene.add(wallClockFrame);
 function paintWallClock() {
   const now = new Date();
   const time = now.toLocaleTimeString("es-MX", { timeZone: "America/Mexico_City", hour: "2-digit", minute: "2-digit" });
+  const raw = now.toLocaleDateString("es-MX", { timeZone: "America/Mexico_City", weekday: "long", day: "2-digit", month: "short" }).replace(/\./g, "").replace(",", "");
+  const day = raw.charAt(0).toUpperCase() + raw.slice(1);
   const ctx = wallClockCtx;
   ctx.fillStyle = "#111814";
-  ctx.fillRect(0, 0, 640, 240);
+  ctx.fillRect(0, 0, 640, 320);
   ctx.fillStyle = "#d6ffe8";
-  ctx.font = "700 120px Segoe UI, sans-serif";
+  ctx.font = "700 108px Segoe UI, sans-serif";
   ctx.textAlign = "center";
   ctx.fillText(time, 320, 150);
+  ctx.font = "500 42px Segoe UI, sans-serif";
+  ctx.fillStyle = "#9dccb0";
+  ctx.fillText(day, 320, 230);
   wallClockTex.needsUpdate = true;
 }
 const desks = [
