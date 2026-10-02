@@ -851,18 +851,22 @@ const countLeg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.66, 0.06), new THR
   scene.add(leg);
 });
 const counter = new THREE.Group();
-const counterBody = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.28, 0.34), new THREE.MeshStandardMaterial({ color: 0x1f8a4c, roughness: 0.4, metalness: 0.2 }));
-counterBody.position.y = 0.14;
-const counterSlot = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.05, 0.16), new THREE.MeshStandardMaterial({ color: 0x163d28 }));
-counterSlot.position.set(0.18, 0.3, 0);
-counter.add(counterBody, counterSlot);
+const green = new THREE.MeshStandardMaterial({ color: 0x1c7a42, roughness: 0.35, metalness: 0.25 });
+const dark = new THREE.MeshStandardMaterial({ color: 0x102818, roughness: 0.5 });
+const body = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.22, 0.3), green);
+body.position.y = 0.11;
+const hopper = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.16, 0.2), dark);
+hopper.position.set(-0.08, 0.28, -0.02);
+const tray = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.03, 0.16), green);
+tray.position.set(0.02, 0.24, 0.2);
+const screen = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.06, 0.01), new THREE.MeshBasicMaterial({ color: 0x9dffb0 }));
+screen.position.set(0.12, 0.18, 0.16);
+counter.add(body, hopper, tray, screen);
 counter.position.set(-3.15, 0.74, -6.15);
 scene.add(counter);
 const bills = [];
-for (let i = 0; i < 5; i++) {
-  const bill = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.07), new THREE.MeshBasicMaterial({ color: 0x8fd18a, side: THREE.DoubleSide }));
-  bill.position.set(-3.35, 0.96, -6.15);
-  bill.rotation.x = -Math.PI / 2;
+for (let i = 0; i < 8; i++) {
+  const bill = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.004, 0.08), new THREE.MeshStandardMaterial({ color: i % 2 ? 0xdfc56a : 0x8fd18a, roughness: 0.7 }));
   bill.visible = false;
   scene.add(bill);
   bills.push(bill);
@@ -1372,7 +1376,7 @@ let lastPing = 0;
 let lastCount = 0;
 function countBurst() {
   if (!weatherAudio) return;
-  for (let i = 0; i < 8; i++) setTimeout(() => tap(1600 + i * 40, 0.03, 0.07), i * 45);
+  for (let i = 0; i < 14; i++) setTimeout(() => tap(900 + (i % 3) * 80, 0.025, 0.06), i * 28);
 }
 function unlockVoice() {
   startWeatherAudio();
@@ -1432,9 +1436,11 @@ function animate() {
   bills.forEach((bill, i) => {
     bill.visible = counting;
     if (!counting) return;
-    const cycle = (t * 1.1 + i * 0.28) % 1;
-    bill.position.set(-3.15 + cycle * 0.15, 0.96 - cycle * 0.7, -5.7 + cycle * 0.45);
-    bill.rotation.z = cycle * 1.4;
+    const cycle = (t * 0.7 + i * 0.18) % 1;
+    const fall = Math.min(1, cycle * 1.4);
+    bill.position.set(-3.15 + Math.sin(i) * 0.08, 1.02 - fall * 0.9, -5.85 + fall * 0.55);
+    bill.rotation.x = -0.4 + fall * 1.2;
+    bill.rotation.z = (i - 3) * 0.15;
   });
   if (counting && t - lastCount > 0.55) { lastCount = t; countBurst(); }
   if (pinging && Math.abs(Math.sin(t * 2.2)) > 0.96 && t - lastPing > 0.28) { lastPing = t; tap(880, 0.06, 0.08); }
