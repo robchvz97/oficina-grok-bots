@@ -831,6 +831,22 @@ const lidR = makeLid(0.42);
 freezer.add(freezerBody, freezerInside, lidL, lidR);
 freezer.position.set(-6.85, 0, -6.15);
 scene.add(freezer);
+const packTable = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.08, 0.8), new THREE.MeshStandardMaterial({ color: 0x8a5a32, roughness: 0.55 }));
+packTable.position.set(-4.9, 0.74, -6.15);
+const packLeg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.7, 0.08), new THREE.MeshStandardMaterial({ color: 0x6b4428 }));
+[[-0.7, -0.28], [0.7, -0.28], [-0.7, 0.28], [0.7, 0.28]].forEach(([x, z]) => {
+  const leg = packLeg.clone();
+  leg.position.set(-4.9 + x, 0.35, -6.15 + z);
+  scene.add(leg);
+});
+scene.add(packTable);
+const boxes = [];
+for (let i = 0; i < 4; i++) {
+  const box = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.28, 0.34), new THREE.MeshStandardMaterial({ color: 0xc4a574, roughness: 0.8 }));
+  box.position.set(-6.85, 0.55, -6.15);
+  scene.add(box);
+  boxes.push(box);
+}
 
 machine.rotation.y = -Math.PI / 2;
 scene.add(machine);
@@ -1121,7 +1137,8 @@ const solids = [
   { x: 0, z: 0.4, hx: 0.75, hz: 1.25 },
   { x: 7.5, z: 4.4, hx: 0.5, hz: 0.55 },
   { x: -6.5, z: 5.2, hx: 0.4, hz: 0.4 },
-  { x: -6.85, z: -6.15, hx: 0.9, hz: 0.45 }
+  { x: -6.85, z: -6.15, hx: 0.9, hz: 0.45 },
+  { x: -4.9, z: -6.15, hx: 0.9, hz: 0.45 }
 ];
 function keepOut(pos, radius) {
   pos.x = Math.max(-7.35, Math.min(7.35, pos.x));
@@ -1399,9 +1416,9 @@ function animate() {
         officeBall.position.z = 3.4 + Math.sin(ang + 0.8) * 0.4;
         officeBall.position.y = 0.18 + Math.abs(Math.sin(t * 3)) * 0.25;
       } else if (mode === "freezer") {
-        tx = -5.4;
-        tz = -5.2 + (si - 0.5) * 0.5;
-        trot = Math.atan2(-6.85 - tx, -6.15 - tz);
+        tx = -5.85;
+        tz = -5.15 + (si - 0.5) * 0.45;
+        trot = Math.atan2(-5.8 - tx, -6.15 - tz);
         emoji = "🧊";
         pose = "freezer";
       } else if (mode === "drink") {
@@ -1504,6 +1521,16 @@ function animate() {
   const lidTarget = freezerOpen ? -1.15 : 0;
   lidL.rotation.x += (lidTarget - lidL.rotation.x) * 0.08;
   lidR.rotation.x += (lidTarget - lidR.rotation.x) * 0.08;
+  const packing = Math.floor(t / 18) % 2 === 0;
+  boxes.forEach((box, i) => {
+    const out = packing && t % 18 > i * 3;
+    const back = !packing && t % 18 > i * 3;
+    const onTable = packing ? out : !back;
+    const target = onTable
+      ? new THREE.Vector3(-4.9, 0.92 + i * 0.3, -6.15)
+      : new THREE.Vector3(-6.85, 0.55, -6.15);
+    box.position.lerp(target, 0.04);
+  });
   actors.forEach((a, i) => { if (a.bot.status === "esperando") paintScreen(i, Math.sin(t * 5) > 0); });
   setMurmur(actors.filter(a => a.pose === "chat").length >= 2, t);
   renderer.render(scene, camera);
