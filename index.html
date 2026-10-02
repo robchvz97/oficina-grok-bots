@@ -440,17 +440,17 @@ function pane(w, h, x, y, z, rotY) {
   scene.add(g);
   return g;
 }
-pane(10.4, 5.6, 0.2, 3.6, -6.78, 0);
+pane(10.4, 5.6, 0.2, 3.6, -6.7, 0);
 const skyCanvas = document.createElement("canvas");
 skyCanvas.width = 1024; skyCanvas.height = 512;
 const skyCtx = skyCanvas.getContext("2d");
 const skyTex = new THREE.CanvasTexture(skyCanvas);
 const skyMat = new THREE.MeshBasicMaterial({ map: skyTex });
 const skyBack = new THREE.Mesh(new THREE.PlaneGeometry(10.6, 5.7), skyMat);
-skyBack.position.set(0.2, 3.6, -6.92);
+skyBack.position.set(0.2, 3.6, -6.84);
 scene.add(skyBack);
 const skySide = new THREE.Mesh(new THREE.PlaneGeometry(10.2, 5.5), skyMat);
-skySide.position.set(-7.92, 3.5, 0.6);
+skySide.position.set(-7.72, 3.5, 0.6);
 skySide.rotation.y = Math.PI / 2;
 scene.add(skySide);
 function paintSky(mode) {
@@ -483,13 +483,14 @@ function paintSky(mode) {
     }
   }
   if (isNight) {
-    ctx.fillStyle = "rgba(7,10,20,0.78)";
+    ctx.fillStyle = "#0b1020";
     ctx.fillRect(0, 0, 1024, 512);
-    const colors = ["#ffe1a8", "#ffd27a", "#9fd0ff", "#fff6d8", "#f2c14e"];
-    for (let i = 0; i < 110; i++) {
-      ctx.globalAlpha = 0.4 + ((i * 13) % 50) / 100;
+    const colors = ["#ffe7b0", "#ffd36a", "#b9dcff", "#fff8dc", "#f2c14e", "#ffffff"];
+    for (let i = 0; i < 160; i++) {
+      ctx.globalAlpha = 0.7;
       ctx.fillStyle = colors[i % colors.length];
-      ctx.fillRect(16 + (i * 53) % 990, 230 + (i * 31) % 250, i % 4 === 0 ? 10 : 5, 7);
+      const w = i % 5 === 0 ? 16 : 8;
+      ctx.fillRect(12 + (i * 41) % 990, 180 + (i * 37) % 300, w, 12);
     }
     ctx.globalAlpha = 1;
   }
@@ -540,8 +541,8 @@ async function loadWeather() {
 }
 loadWeather();
 setInterval(loadWeather, 600000);
-pane(4.6, 5.4, -7.9, 3.5, -1.2, Math.PI / 2);
-pane(4.6, 5.4, -7.9, 3.5, 2.6, Math.PI / 2);
+pane(4.6, 5.4, -7.78, 3.5, -1.2, Math.PI / 2);
+pane(4.6, 5.4, -7.78, 3.5, 2.6, Math.PI / 2);
 for (let i = -4; i <= 4; i++) box(0.045, 5.6, 0.045, 0xd9dde2, i * 1.15, 3.6, -6.86);
 box(10.6, 0.06, 0.06, 0xd9dde2, 0.2, 6.4, -6.86);
 box(10.6, 0.06, 0.06, 0xd9dde2, 0.2, 0.75, -6.86);
