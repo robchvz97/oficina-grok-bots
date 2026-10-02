@@ -317,7 +317,7 @@ officeBall.position.set(4.2, 0.16, 3.6);
 officeBall.castShadow = true;
 scene.add(officeBall);
 const napMat = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.08, 0.8), new THREE.MeshStandardMaterial({ color: 0x6d8fbf }));
-napMat.position.set(-4.6, 0.06, 4.4);
+napMat.position.set(0, 0.06, 2.6);
 scene.add(napMat);
 
 
@@ -519,7 +519,7 @@ function animate() {
       const ri = Math.max(0, resting.indexOf(a));
       const mode = ri % 3;
       if (mode === 0) {
-        tx = -4.6; tz = 4.4; trot = 0; emoji = "💤"; pose = "sleep";
+        tx = 0; tz = 2.6; trot = Math.PI; emoji = "💤"; pose = "sleep";
       } else if (mode === 1) {
         const ang = t * 1.3 + a.phase;
         tx = 4.2 + Math.cos(ang) * 1.1;
@@ -549,12 +549,14 @@ function animate() {
 
     const moving = Math.hypot(tx - a.person.position.x, tz - a.person.position.z) > 0.08 || status === "caminando";
     const swing = moving ? Math.sin(t * 7 + a.phase) * 0.55 : Math.sin(t * 1.5 + a.phase) * 0.08;
-    a.person.rotation.z += ((pose === "sleep" ? Math.PI / 2 : 0) - a.person.rotation.z) * 0.08;
+    a.person.rotation.z += (0 - a.person.rotation.z) * 0.2;
     if (pose === "sleep") {
-      limbs.legL.rotation.x = 0.2; limbs.legR.rotation.x = 0.2;
-      limbs.armL.rotation.x = -0.15; limbs.armR.rotation.x = -0.15;
-      a.person.position.y = 0.32;
-    } else if (pose === "play") {
+      limbs.legL.rotation.x = 1.2; limbs.legR.rotation.x = 1.2;
+      limbs.armL.rotation.x = -0.4; limbs.armR.rotation.x = -0.4;
+      limbs.body.rotation.x = 1.15;
+      a.person.position.y = 0.15;
+    } else { limbs.body.rotation.x += (0 - limbs.body.rotation.x) * 0.2; }
+    if (pose === "play") {
       limbs.legL.rotation.x = Math.sin(t * 8) * 0.9;
       limbs.legR.rotation.x = -Math.sin(t * 8) * 0.9;
       limbs.armL.rotation.x = -1.2; limbs.armR.rotation.x = -0.3;
