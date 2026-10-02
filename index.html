@@ -58,8 +58,11 @@
     font: inherit; font-size: 12px; cursor: pointer; padding: 0; text-decoration: underline;
   }
 
-  #joy { position: fixed; right: 22px; bottom: 28px; width: 128px; height: 128px; border-radius: 50%; background: rgba(28,25,21,0.35); border: 2px solid rgba(255,255,255,0.35); touch-action: none; z-index: 6; }
-  #knob { position: absolute; left: 44px; top: 44px; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,250,242,0.9); }
+  #joy, #look { position: fixed; bottom: 28px; width: 128px; height: 128px; border-radius: 50%; background: rgba(28,25,21,0.35); border: 2px solid rgba(255,255,255,0.35); touch-action: none; z-index: 6; }
+  #joy { right: 22px; }
+  #look { left: 22px; }
+  canvas { touch-action: none; }
+  #knob, #look-knob { position: absolute; left: 44px; top: 44px; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,250,242,0.9); }
 
   .hud-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   #hud-hide, #hud-show, #hud-refresh, #hud-refresh-out { border: 0; background: #1c1915; color: #f4efe6; border-radius: 999px; width: 28px; height: 28px; cursor: pointer; }
@@ -82,6 +85,7 @@
 </div>
 <div id="clock"></div>
 <div id="hint">W adelante · S atras · A izquierda · D derecha · en el celular usa el joystick</div>
+<div id="look"><div id="look-knob"></div></div>
 <div id="joy"><div id="knob"></div></div>
 <script src="three.min.js"></script>
 <script>
@@ -232,6 +236,31 @@ document.getElementById("hud-hide").onclick = () => { hud.classList.add("hidden"
 document.getElementById("hud-refresh").onclick = () => location.reload();
 document.getElementById("hud-refresh-out").onclick = () => location.reload();
 hudShow.onclick = () => { hud.classList.remove("hidden"); hudShow.hidden = true; };
+
+const lookEl = document.getElementById("look");
+const lookKnob = document.getElementById("look-knob");
+const lookJoy = { x: 0, y: 0 };
+function setLook(cx, cy, px, py) {
+  const dx = px - cx;
+  const dy = py - cy;
+  const max = 44;
+  const len = Math.hypot(dx, dy) || 1;
+  const cl = Math.min(max, len);
+  lookKnob.style.left = (44 + dx / len * cl) + "px";
+  lookKnob.style.top = (44 + dy / len * cl) + "px";
+  lookJoy.x = dx / len * cl / max;
+  lookJoy.y = dy / len * cl / max;
+}
+function lookPoint(e) {
+  const t = e.touches ? e.touches[0] : e;
+  const r = lookEl.getBoundingClientRect();
+  setLook(r.left + r.width / 2, r.top + r.height / 2, t.clientX, t.clientY);
+}
+lookEl.addEventListener("pointerdown", e => { lookEl.setPointerCapture(e.pointerId); lookPoint(e); e.preventDefault(); });
+lookEl.addEventListener("pointermove", e => { if (e.buttons || e.pressure) lookPoint(e); });
+function resetLook() { lookJoy.x = 0; lookJoy.y = 0; lookKnob.style.left = "44px"; lookKnob.style.top = "44px"; }
+lookEl.addEventListener("pointerup", resetLook);
+lookEl.addEventListener("pointercancel", resetLook);
 const TOPIC = "frutos-chavez-oficina-7f3a9c2e1b84";
 const NTFY = "https://ntfy.sh/" + TOPIC;
 document.getElementById("probar").onclick = () => {
@@ -728,6 +757,7 @@ window.addEventListener("keyup", e => { keys[e.key.toLowerCase()] = false; });
 
 renderer.domElement.addEventListener("pointerdown", e => {
   dragging = true; lx = e.clientX; ly = e.clientY;
+  renderer.domElement.setPointerCapture(e.pointerId);
   pointer.x = (e.clientX / innerWidth) * 2 - 1;
   pointer.y = -(e.clientY / innerHeight) * 2 + 1;
   raycaster.setFromCamera(pointer, camera);
@@ -848,6 +878,8 @@ function animate() {
   const forward = (keys.s || keys.arrowdown ? 1 : 0) - (keys.w || keys.arrowup ? 1 : 0) - joy.y;
   const strafe = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0) + joy.x;
   if (forward || strafe) focus = null;
+  yaw -= lookJoy.x * 0.03;
+  pitch = Math.max(0.25, Math.min(1.15, pitch + lookJoy.y * 0.02));
   const lookX = Math.sin(yaw);
   const lookZ = Math.cos(yaw);
   const rightX = lookZ;
