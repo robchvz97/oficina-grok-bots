@@ -484,6 +484,7 @@ desks.forEach(d => {
   base.position.y = 0.08;
   chair.add(seat, back, armL, armR, pole, base);
   chair.position.set(0, 0, 0.72);
+  d.chair = chair;
   g.add(top, wing, legA, legB, legC, screen, displayMesh, stand, chair);
   g.position.set(d.x, 0, d.z);
   g.rotation.y = d.rot;
@@ -927,7 +928,7 @@ function animate() {
     let tx = home.x, tz = home.z, trot = home.rot;
     let emoji = "💻", show = true;
     let pose = "stand";
-    if (status === "trabajando") trot = home.rot + Math.PI;
+    if (status === "trabajando") { trot = home.rot + Math.PI; pose = "sit"; }
     if (status === "caminando") {
       const ang = t * 0.45 + a.phase;
       tx = Math.cos(ang) * 2.4;
@@ -1024,12 +1025,21 @@ function animate() {
       limbs.armL.rotation.x = -0.5 + Math.sin(t * 3 + i) * 0.45;
       limbs.armR.rotation.x = -0.8;
       a.person.position.y = 0;
+    } else if (pose === "sit") {
+      limbs.legL.rotation.x = 1.45;
+      limbs.legR.rotation.x = 1.45;
+      limbs.armL.rotation.x = -0.8 + Math.sin(t * 8 + i) * 0.25;
+      limbs.armR.rotation.x = -0.8 + Math.sin(t * 8 + i + 1) * 0.25;
+      limbs.body.rotation.x = 0.12;
+      a.person.position.y = 0.42;
+      if (desks[i] && desks[i].chair) desks[i].chair.rotation.y += (0 - desks[i].chair.rotation.y) * 0.1;
     } else {
       limbs.legL.rotation.x = swing;
       limbs.legR.rotation.x = -swing;
-      limbs.armL.rotation.x = status === "trabajando" ? -0.8 + Math.sin(t * 8 + i) * 0.25 : -swing * 0.7;
-      limbs.armR.rotation.x = status === "trabajando" ? -0.8 + Math.sin(t * 8 + i + 1) * 0.25 : swing * 0.7;
+      limbs.armL.rotation.x = -swing * 0.7;
+      limbs.armR.rotation.x = swing * 0.7;
       a.person.position.y = moving ? Math.abs(Math.sin(t * 7 + a.phase)) * 0.04 : 0;
+      if (desks[i] && desks[i].chair) desks[i].chair.rotation.y += (0.6 - desks[i].chair.rotation.y) * 0.05;
     }
     a.pose = pose;
     if (a.handCan) a.handCan.visible = pose === "drink";
