@@ -1304,6 +1304,23 @@ function updateWeatherAudio(t) {
     }
   }
 }
+function tap(freq, dur, gainValue) {
+  if (!weatherAudio) return;
+  const ctx = weatherAudio.ctx;
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type = "triangle";
+  o.frequency.setValueAtTime(freq, ctx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(freq * 0.5, ctx.currentTime + dur);
+  g.gain.setValueAtTime(gainValue, ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+  o.connect(g);
+  g.connect(ctx.destination);
+  o.start();
+  o.stop(ctx.currentTime + dur);
+}
+let lastKick = 0;
+let lastPing = 0;
 function unlockVoice() {
   startWeatherAudio();
   if (!window.speechSynthesis) return;
@@ -1355,6 +1372,10 @@ function animate() {
   lampMat.emissiveIntensity = (1 - day) * 0.8;
   fill.intensity = 0.2 + (1 - day) * 0.35;
   updateWeatherAudio(t);
+  const playing = actors.some(a => a.pose === "play");
+  const pinging = actors.some(a => a.pose === "ping");
+  if (playing && Math.sin(t * 3) > 0.95 && t - lastKick > 0.45) { lastKick = t; tap(140, 0.12, 0.12); }
+  if (pinging && Math.abs(Math.sin(t * 2.2)) > 0.96 && t - lastPing > 0.28) { lastPing = t; tap(880, 0.06, 0.08); }
   if (rain.visible) rain.children.forEach(drop => {
     drop.position.y -= drop.userData.speed;
     if (drop.position.y < 0.4) drop.position.y = 6;
