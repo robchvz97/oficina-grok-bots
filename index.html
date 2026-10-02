@@ -158,7 +158,40 @@ document.getElementById("reset").onclick = () => {
   save();
   renderRoster();
   
+
+function paintScreen(i) {
+  const desk = desks[i];
+  const bot = bots[i];
+  if (!desk || !desk.display || !bot) return;
+  const ctx = desk.display.ctx;
+  const working = bot.status === "trabajando";
+  ctx.fillStyle = working ? "#10261c" : "#141816";
+  ctx.fillRect(0, 0, 512, 320);
+  ctx.fillStyle = working ? "#7dcea0" : "#8a8175";
+  ctx.font = "600 28px Segoe UI, sans-serif";
+  ctx.fillText(String(bot.name || "Bot").slice(0, 18), 28, 48);
+  ctx.fillStyle = "#f4efe6";
+  ctx.font = "400 34px Segoe UI, sans-serif";
+  const line = working ? (bot.task || bot.role || "Trabajando") : "Pantalla en espera";
+  wrapText(ctx, String(line), 28, 110, 456, 42);
+  desk.display.tex.needsUpdate = true;
+}
+function wrapText(ctx, text, x, y, max, lh) {
+  const words = text.split(" ");
+  let line = "";
+  let yy = y;
+  words.forEach(word => {
+    const test = line ? line + " " + word : word;
+    if (ctx.measureText(test).width > max) {
+      ctx.fillText(line, x, yy);
+      line = word;
+      yy += lh;
+    } else line = test;
+  });
+  ctx.fillText(line, x, yy);
+}
 actors.forEach(a => a.setLabel());
+actors.forEach((a, i) => paintScreen(i));
   fetch("/api/estado", { method: "POST", headers: { "Content-Type": "application/json" }, body: "[]" }).catch(() => {});
 };
 
@@ -226,6 +259,7 @@ function applyRemote(list) {
   save();
   renderRoster();
   actors.forEach(a => a.setLabel());
+  actors.forEach((a, i) => paintScreen(i));
 }
 async function pull() {
   try {
@@ -386,8 +420,16 @@ desks.forEach(d => {
   legA.position.set(-0.8, 0.36, -0.28);
   legB.position.set(0.8, 0.36, -0.28);
   legC.position.set(0.8, 0.36, 1.05);
-  const screen = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.42, 0.03), new THREE.MeshStandardMaterial({ color: 0x101814, emissive: 0x1f6b45, emissiveIntensity: 0.4 }));
+  const screen = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.42, 0.03), new THREE.MeshStandardMaterial({ color: 0x101814 }));
   screen.position.set(-0.15, 1.08, -0.28);
+  const display = document.createElement("canvas");
+  display.width = 512; display.height = 320;
+  const displayCtx = display.getContext("2d");
+  const displayTex = new THREE.CanvasTexture(display);
+  const displayMat = new THREE.MeshBasicMaterial({ map: displayTex });
+  const displayMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.64, 0.36), displayMat);
+  displayMesh.position.set(-0.15, 1.08, -0.25);
+  d.display = { ctx: displayCtx, tex: displayTex, canvas: display };
   const stand = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.2, 0.05), metal);
   stand.position.set(-0.15, 0.86, -0.28);
   const chair = new THREE.Group();
@@ -405,7 +447,7 @@ desks.forEach(d => {
   base.position.y = 0.08;
   chair.add(seat, back, armL, armR, pole, base);
   chair.position.set(0, 0, 0.72);
-  g.add(top, wing, legA, legB, legC, screen, stand, chair);
+  g.add(top, wing, legA, legB, legC, screen, displayMesh, stand, chair);
   g.position.set(d.x, 0, d.z);
   g.rotation.y = d.rot;
   scene.add(g);
