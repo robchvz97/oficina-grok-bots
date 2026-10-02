@@ -371,23 +371,25 @@ function makePerson(color) {
   const shirt = new THREE.MeshStandardMaterial({ color, roughness: 0.65 });
   const cloth = new THREE.MeshStandardMaterial({ color: 0x2c2824, roughness: 0.8 });
   const skinM = new THREE.MeshStandardMaterial({ color: skin, roughness: 0.55 });
-  const body = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.48, 0.24), shirt);
-  body.position.y = 1.02;
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.26, 6, 12), shirt);
+  body.position.y = 0.92;
   body.castShadow = true;
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 18, 14), skinM);
-  head.position.y = 1.4;
+  const neck = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 10), skinM);
+  neck.position.y = 1.16;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 20, 16), skinM);
+  head.position.y = 1.36;
   head.castShadow = true;
-  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.165, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.62), new THREE.MeshStandardMaterial({ color: 0x2a211c }));
-  hair.position.y = 1.45;
-  const legL = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.42, 0.14), cloth);
+  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.155, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.55), new THREE.MeshStandardMaterial({ color: 0x2a211c }));
+  hair.position.y = 1.4;
+  const legL = new THREE.Mesh(new THREE.CapsuleGeometry(0.055, 0.28, 4, 8), cloth);
   const legR = legL.clone();
-  legL.position.set(-0.1, 0.62, 0);
-  legR.position.set(0.1, 0.62, 0);
-  const armL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.38, 0.1), shirt);
+  legL.position.set(-0.08, 0.46, 0);
+  legR.position.set(0.08, 0.46, 0);
+  const armL = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.24, 4, 8), shirt);
   const armR = armL.clone();
-  armL.position.set(-0.28, 1.02, 0);
-  armR.position.set(0.28, 1.02, 0);
-  g.add(body, head, hair, legL, legR, armL, armR);
+  armL.position.set(-0.24, 0.98, 0);
+  armR.position.set(0.24, 0.98, 0);
+  g.add(body, neck, head, hair, legL, legR, armL, armR);
   g.userData.limbs = { legL, legR, armL, armR, body };
   g.userData.head = head;
   g.userData.hair = hair;
@@ -408,15 +410,15 @@ const actors = bots.map((b, i) => {
   person.rotation.y = home[i].rot;
   scene.add(person);
   const label = makeLabel(b.name);
-  label.position.set(0, 1.85, 0);
+  label.position.set(0, 1.95, 0);
   person.add(label);
   const bubble = makeBubble();
   bubble.position.set(0.35, 1.55, 0);
   person.add(bubble);
   const faceMat = new THREE.SpriteMaterial({ transparent: true, depthWrite: false });
   const face = new THREE.Sprite(faceMat);
-  face.position.set(0, 1.42, 0.02);
-  face.scale.set(0.62, 0.62, 1);
+  face.position.set(0, 1.36, 0.08);
+  face.scale.set(0.4, 0.4, 1);
   face.visible = false;
   person.add(face);
   return {
@@ -430,7 +432,7 @@ const actors = bots.map((b, i) => {
     setLabel() { paintLabel(label, b.name, b.role); setFace(this); }
   };
 });
-const FACES = { nigoo: "faces/nigoo.jpg", muller: "faces/muller.jpg", gori: "faces/gori.jpg", gustav: "faces/gustav.jpg" };
+const FACES = { nigoo: "faces/nigoo.png", muller: "faces/muller.png", gori: "faces/gori.png", gustav: "faces/gustav.png" };
 function setFace(actor) {
   const key = String(actor.bot.name || "").toLowerCase();
   const look = LOOKS[key];
