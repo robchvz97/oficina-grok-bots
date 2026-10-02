@@ -265,12 +265,20 @@ function cyl(r, h, color, x, y, z) {
   return m;
 }
 
-box(16, 0.12, 14, 0x8d734c, 0, 0, 0);
-box(16.2, 0.06, 14.2, 0x3e342c, 0, -0.06, 0);
-box(0.18, 3.3, 14, 0xf4efe6, -8, 1.65, 0);
-box(0.18, 3.3, 14, 0xf4efe6, 8, 1.65, 0);
-box(16, 3.3, 0.16, 0xf7f3ec, 0, 1.65, -7);
-box(16, 0.12, 14.2, 0xfbf8f3, 0, 3.25, 0, { roughness: 0.9 });
+const marbleA = new THREE.MeshStandardMaterial({ color: 0xf4f1ea, roughness: 0.28, metalness: 0.08 });
+const marbleB = new THREE.MeshStandardMaterial({ color: 0xd9d3c8, roughness: 0.32, metalness: 0.06 });
+for (let ix = -7; ix <= 7; ix++) {
+  for (let iz = -6; iz <= 6; iz++) {
+    const tile = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.06, 0.98), (ix + iz) % 2 === 0 ? marbleA : marbleB);
+    tile.position.set(ix, 0.03, iz);
+    tile.receiveShadow = true;
+    scene.add(tile);
+  }
+}
+box(0.22, 4.8, 14, 0xe7d3b0, -8, 2.4, 0);
+box(0.22, 4.8, 14, 0xe7d3b0, 8, 2.4, 0);
+box(16, 4.8, 0.18, 0xecdcc0, 0, 2.4, -7);
+box(16, 0.12, 14.2, 0xf3ead8, 0, 4.8, 0, { roughness: 0.85 });
 
 const glassMat = new THREE.MeshStandardMaterial({ color: 0xb7d4e4, emissive: 0x1d4e6a, emissiveIntensity: 0.35, roughness: 0.08, metalness: 0.25, transparent: true, opacity: 0.72 });
 const frameMat = new THREE.MeshStandardMaterial({ color: 0xd9dde2, metalness: 0.65, roughness: 0.25 });
@@ -281,22 +289,22 @@ function pane(w, h, x, y, z, rotY) {
   scene.add(g);
   return g;
 }
-pane(10.4, 2.15, 0.2, 1.85, -6.9, 0);
-pane(4.6, 2.05, -7.9, 1.8, -1.2, Math.PI / 2);
-pane(4.6, 2.05, -7.9, 1.8, 2.6, Math.PI / 2);
-for (let i = -4; i <= 4; i++) box(0.045, 2.2, 0.045, 0xd9dde2, i * 1.15, 1.85, -6.86);
-box(10.6, 0.06, 0.06, 0xd9dde2, 0.2, 2.95, -6.86);
+pane(10.4, 2.8, 0.2, 2.35, -6.9, 0);
+pane(4.6, 2.7, -7.9, 2.3, -1.2, Math.PI / 2);
+pane(4.6, 2.7, -7.9, 2.3, 2.6, Math.PI / 2);
+for (let i = -4; i <= 4; i++) box(0.045, 2.85, 0.045, 0xd9dde2, i * 1.15, 2.35, -6.86);
+box(10.6, 0.06, 0.06, 0xd9dde2, 0.2, 3.75, -6.86);
 box(10.6, 0.06, 0.06, 0xd9dde2, 0.2, 0.75, -6.86);
 
 const logoFrame = new THREE.Mesh(new THREE.BoxGeometry(3.4, 2.15, 0.06), new THREE.MeshStandardMaterial({ color: 0xf7f4ee }));
-logoFrame.position.set(5.2, 1.85, -6.82);
+logoFrame.position.set(5.2, 2.35, -6.82);
 scene.add(logoFrame);
 const logoBorder = new THREE.Mesh(new THREE.BoxGeometry(3.55, 2.3, 0.04), new THREE.MeshStandardMaterial({ color: 0xc5a46a, metalness: 0.4, roughness: 0.35 }));
-logoBorder.position.set(5.2, 1.85, -6.86);
+logoBorder.position.set(5.2, 2.35, -6.86);
 scene.add(logoBorder);
 const logoMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
 const logo = new THREE.Mesh(new THREE.PlaneGeometry(3.15, 1.9), logoMat);
-logo.position.set(5.2, 1.85, -6.78);
+logo.position.set(5.2, 2.35, -6.78);
 scene.add(logo);
 new THREE.TextureLoader().load("logo.jpg", function (tex) {
   if (tex.colorSpace !== undefined && THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
@@ -366,6 +374,26 @@ scene.add(officeBall);
 const napMat = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.06, 0.8), new THREE.MeshStandardMaterial({ color: 0x6d8fbf }));
 napMat.position.set(0, 0.05, 2.6);
 scene.add(napMat);
+const machine = new THREE.Group();
+const machineBody = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.85, 0.7), new THREE.MeshStandardMaterial({ color: 0x1f4d3a, roughness: 0.4, metalness: 0.2 }));
+machineBody.position.y = 0.95;
+const machineGlass = new THREE.Mesh(new THREE.BoxGeometry(0.72, 1.05, 0.04), new THREE.MeshStandardMaterial({ color: 0xd7eef8, transparent: true, opacity: 0.45, metalness: 0.2 }));
+machineGlass.position.set(0, 1.15, 0.35);
+const slot = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.18, 0.08), new THREE.MeshStandardMaterial({ color: 0x111 }));
+slot.position.set(0, 0.38, 0.34);
+const canColors = [0xe23b32, 0x1f6feb, 0xf0c14b, 0x2ea043, 0xf2f2f2];
+for (let r = 0; r < 4; r++) {
+  for (let c = 0; c < 4; c++) {
+    const can = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.16, 10), new THREE.MeshStandardMaterial({ color: canColors[(r + c) % canColors.length], metalness: 0.45, roughness: 0.3 }));
+    can.position.set(-0.24 + c * 0.16, 0.78 + r * 0.22, 0.28);
+    machine.add(can);
+  }
+}
+machine.add(machineBody, machineGlass, slot);
+machine.position.set(7.55, 0, 4.4);
+machine.rotation.y = -Math.PI / 2;
+scene.add(machine);
+
 
 function makeLabel(text) {
   const c = document.createElement("canvas");
