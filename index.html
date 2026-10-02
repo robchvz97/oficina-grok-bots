@@ -615,6 +615,30 @@ document.getElementById('pedidos').addEventListener('input', () => {
   saveOrders(info.key, document.getElementById('pedidos').value.split('\n').map(s => s.trim()).filter(Boolean));
   paintBoard();
 });
+
+const wallClockCanvas = document.createElement("canvas");
+wallClockCanvas.width = 640; wallClockCanvas.height = 240;
+const wallClockCtx = wallClockCanvas.getContext("2d");
+const wallClockTex = new THREE.CanvasTexture(wallClockCanvas);
+const wallClock = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.68), new THREE.MeshBasicMaterial({ map: wallClockTex }));
+wallClock.position.set(7.55, 4.7, -4.2);
+wallClock.rotation.y = -Math.PI / 2;
+scene.add(wallClock);
+const wallClockFrame = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.78, 1.95), new THREE.MeshStandardMaterial({ color: 0x1c1915 }));
+wallClockFrame.position.set(7.6, 4.7, -4.2);
+scene.add(wallClockFrame);
+function paintWallClock() {
+  const now = new Date();
+  const time = now.toLocaleTimeString("es-MX", { timeZone: "America/Mexico_City", hour: "2-digit", minute: "2-digit" });
+  const ctx = wallClockCtx;
+  ctx.fillStyle = "#111814";
+  ctx.fillRect(0, 0, 640, 240);
+  ctx.fillStyle = "#d6ffe8";
+  ctx.font = "700 120px Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(time, 320, 150);
+  wallClockTex.needsUpdate = true;
+}
 const desks = [
   { x: -3.4, z: -2.2, rot: 0 },
   { x: 3.5, z: -2.2, rot: 0 },
@@ -997,10 +1021,12 @@ window.addEventListener("resize", () => {
 
 function tickClock() {
   const now = new Date();
-  document.getElementById("clock").textContent = now.toLocaleString("es-MX", { hour: "2-digit", minute: "2-digit", weekday: "short" });
+  const el = document.getElementById("clock");
+  if (el) el.textContent = now.toLocaleString("es-MX", { hour: "2-digit", minute: "2-digit", weekday: "short", timeZone: "America/Mexico_City" });
+  if (typeof paintWallClock === "function") paintWallClock();
 }
 tickClock();
-setInterval(tickClock, 15000);
+setInterval(tickClock, 1000);
 
 
 let restPlan = { at: -99, key: "", map: {} };
