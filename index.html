@@ -145,29 +145,6 @@ document.getElementById("reset").onclick = () => {
   save();
   renderRoster();
   
-const FACES = { nigoo: "faces/nigoo.jpg", muller: "faces/muller.jpg", gori: "faces/gori.jpg", gustav: "faces/gustav.jpg" };
-function setFace(actor) {
-  const key = String(actor.bot.name || "").toLowerCase();
-  const look = LOOKS[key];
-  const head = actor.person.userData.head;
-  const hair = actor.person.userData.hair;
-  const shirt = actor.person.userData.shirt;
-  if (look && shirt) shirt.color.setHex(look.shirt);
-  if (!FACES[key]) {
-    actor.face.visible = false;
-    if (head) head.visible = true;
-    if (hair) hair.visible = true;
-    return;
-  }
-  new THREE.TextureLoader().load(FACES[key], function (tex) {
-    if (tex.colorSpace !== undefined && THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
-    actor.face.material.map = tex;
-    actor.face.material.needsUpdate = true;
-    actor.face.visible = true;
-    if (head) head.visible = false;
-    if (hair) hair.visible = false;
-  });
-}
 actors.forEach(a => a.setLabel());
   fetch("/api/estado", { method: "POST", headers: { "Content-Type": "application/json" }, body: "[]" }).catch(() => {});
 };
@@ -453,8 +430,29 @@ const actors = bots.map((b, i) => {
     setLabel() { paintLabel(label, b.name, b.role); setFace(this); }
   };
 });
-actors.forEach(a => a.setLabel());
-
+const FACES = { nigoo: "faces/nigoo.jpg", muller: "faces/muller.jpg", gori: "faces/gori.jpg", gustav: "faces/gustav.jpg" };
+function setFace(actor) {
+  const key = String(actor.bot.name || "").toLowerCase();
+  const look = LOOKS[key];
+  const head = actor.person.userData.head;
+  const hair = actor.person.userData.hair;
+  const shirt = actor.person.userData.shirt;
+  if (look && shirt) shirt.color.setHex(look.shirt);
+  if (!FACES[key]) {
+    actor.face.visible = false;
+    if (head) head.visible = true;
+    if (hair) hair.visible = true;
+    return;
+  }
+  new THREE.TextureLoader().load(FACES[key], function (tex) {
+    if (tex.colorSpace !== undefined && THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
+    actor.face.material.map = tex;
+    actor.face.material.needsUpdate = true;
+    actor.face.visible = true;
+    if (head) head.visible = false;
+    if (hair) hair.visible = false;
+  });
+}
 function makeBubble() {
   const c = document.createElement("canvas");
   c.width = 128; c.height = 128;
