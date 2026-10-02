@@ -364,8 +364,6 @@ desks.forEach(d => {
   d.group = g;
 });
 
-cyl(0.16, 0.74, 0x4a3428, 0.2, 0.37, 0.15);
-cyl(0.62, 0.06, 0xc4a574, 0.2, 0.76, 0.15);
 const plantPot = cyl(0.18, 0.24, 0x2f5d3a, -6.5, 0.12, 5.2);
 const leaves = new THREE.Mesh(new THREE.SphereGeometry(0.38, 14, 12), new THREE.MeshStandardMaterial({ color: 0x3f8f55 }));
 leaves.position.set(-6.5, 0.52, 5.2);
@@ -737,13 +735,14 @@ function animate() {
       const same = resting.filter(x => plan[x.bot.name] === mode);
       const si = Math.max(0, same.indexOf(a));
       if (mode === "ping") {
-        const side = si < 2 ? -1 : 1;
-        const lane = si % 2 === 0 ? -0.38 : 0.38;
+        const count = same.length;
+        const side = count <= 2 ? (si === 0 ? -1 : 1) : (si < 2 ? -1 : 1);
+        const lane = count <= 2 ? 0 : (si % 2 === 0 ? -0.42 : 0.42);
         tx = lane;
-        tz = 0.4 + side * 1.55;
+        tz = 0.4 + side * 1.75;
         trot = side < 0 ? 0 : Math.PI;
         emoji = "🏓";
-        pose = "play";
+        pose = "ping";
         const ballZ = 0.4 + Math.sin(t * 2.2) * 0.95;
         pingBall.position.set(Math.sin(t * 2.2) * 0.25, 0.95 + Math.abs(Math.cos(t * 2.2)) * 0.18, ballZ);
       } else if (mode === "sleep") {
@@ -771,8 +770,10 @@ function animate() {
     } else if (status === "esperando") {
       emoji = "✋";
     }
-    tx += ((i % 2) - 0.5) * 0.15;
-    tz += (i - 1.5) * 0.12;
+    if (pose !== "ping") {
+      tx += ((i % 2) - 0.5) * 0.15;
+      tz += (i - 1.5) * 0.12;
+    }
     a.person.position.x += (tx - a.person.position.x) * 0.04;
     a.person.position.z += (tz - a.person.position.z) * 0.04;
     const dy = trot - a.person.rotation.y;
