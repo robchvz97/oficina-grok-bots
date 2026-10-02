@@ -647,6 +647,7 @@ let yaw = 0.55, pitch = 0.62, dist = 13.5;
 let dragging = false, lx = 0, ly = 0;
 const keys = {};
 const player = { x: 0, z: 5.2, yaw: 0.2, pitch: 0.2 };
+const roam = { x: 0, z: 0 };
 const joy = { x: 0, y: 0 };
 let walking = false;
 window.addEventListener("keydown", e => {
@@ -719,31 +720,22 @@ function animate() {
   const t = clock.getElapsedTime();
   const forward = (keys.w || keys.arrowup ? 1 : 0) - (keys.s || keys.arrowdown ? 1 : 0) + joy.y;
   const strafe = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0) + joy.x;
-  if (forward || strafe) {
-    if (!walking) player.yaw = yaw;
-    walking = true;
-  }
-  if (walking) {
-    const speed = 0.09;
-    const lookX = Math.sin(player.yaw);
-    const lookZ = Math.cos(player.yaw);
-    const rightX = lookZ;
-    const rightZ = -lookX;
-    player.x += (lookX * forward + rightX * strafe) * speed;
-    player.z += (lookZ * forward + rightZ * strafe) * speed;
-    player.x = Math.max(-7.2, Math.min(7.2, player.x));
-    player.z = Math.max(-6.2, Math.min(6.2, player.z));
-    camera.position.set(player.x, 1.55, player.z);
-    camera.lookAt(player.x + Math.sin(player.yaw), 1.45 - player.pitch * 0.6, player.z + Math.cos(player.yaw));
-  } else {
-    const target = focus ? focus.person.position : new THREE.Vector3(0, 0.8, 0);
-    const camTarget = target.clone();
-    camTarget.y = 1.1;
-    camera.position.x = camTarget.x + Math.sin(yaw) * dist * Math.cos(pitch * 0.35);
-    camera.position.z = camTarget.z + Math.cos(yaw) * dist * Math.cos(pitch * 0.35);
-    camera.position.y = 1.4 + dist * Math.sin(pitch) * 0.45;
-    camera.lookAt(camTarget);
-  }
+  if (forward || strafe) focus = null;
+  const lookX = Math.sin(yaw);
+  const lookZ = Math.cos(yaw);
+  const rightX = lookZ;
+  const rightZ = -lookX;
+  const speed = 0.12;
+  roam.x += (lookX * forward + rightX * strafe) * speed;
+  roam.z += (lookZ * forward + rightZ * strafe) * speed;
+  roam.x = Math.max(-7.2, Math.min(7.2, roam.x));
+  roam.z = Math.max(-6.2, Math.min(6.2, roam.z));
+  const camTarget = focus ? focus.person.position.clone() : new THREE.Vector3(roam.x, 1.1, roam.z);
+  camTarget.y = 1.1;
+  camera.position.x = camTarget.x + Math.sin(yaw) * dist * Math.cos(pitch * 0.35);
+  camera.position.z = camTarget.z + Math.cos(yaw) * dist * Math.cos(pitch * 0.35);
+  camera.position.y = 1.4 + dist * Math.sin(pitch) * 0.45;
+  camera.lookAt(camTarget);
 
   actors.forEach((a, i) => {
     const status = a.bot.status;
