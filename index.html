@@ -315,6 +315,11 @@ async function pull() {
         since = Math.max(since, (msg.time || 0) + 1);
         if (msg.event !== "message") return;
         const payload = JSON.parse(msg.message);
+        if (payload && Array.isArray(payload.names)) {
+          const key = payload.date || orderDate().key;
+          saveOrders(key, payload.names.map(s => String(s).trim()).filter(Boolean));
+          paintBoard();
+        }
         if (payload && payload.name) found.push(payload);
       } catch (err) {}
     });
