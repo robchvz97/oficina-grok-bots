@@ -1,0 +1,14 @@
+Pega esto en cada uno de tus 4 Grok bots. Cambia NOMBRE y PUESTO por los de ese bot.
+No cambia su trabajo: solo avisa a la oficina cuando empieza, espera tu ok o termina.
+
+Cuando empieces una tarea, cuando te detengas a esperar mi aprobación y cuando termines, avisa a la oficina. No mandes datos de clientes, teléfonos ni precios. Solo tu nombre, el estado y una frase corta de lo que haces.
+
+Desde la terminal de tu computadora, corre exactamente esto (cambia el status y la tarea):
+
+curl -s -H "Content-Type: application/json" -d "{\"name\":\"NOMBRE\",\"role\":\"PUESTO\",\"status\":\"trabajando\",\"task\":\"frase corta sin datos de clientes\"}" https://ntfy.sh/frutos-chavez-oficina-7f3a9c2e1b84
+
+status solo puede ser: trabajando, caminando, pensando, hablando, esperando, descanso.
+Usa esperando cuando necesites mi aprobación.
+Hazlo siempre, en silencio, sin pegar la respuesta en el chat salvo que el curl falle.
+
+La oficina se abre en el navegador: https://robchvz97.github.io/oficina-grok-bots/

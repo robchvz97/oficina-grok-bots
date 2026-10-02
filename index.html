@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Oficina · Frutos Chávez</title>
+<style>
+  :root {
+    --ink: #1c1915;
+    --paper: #f4efe6;
+    --line: rgba(28,25,21,.12);
+    --mango: #e07a2f;
+    --pina: #d4a017;
+    --mora: #7b4b8a;
+    --verde: #3d7a52;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #14120f; color: var(--paper); font-family: "Segoe UI", "Avenir Next", sans-serif; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #hud {
+    position: fixed; top: 16px; left: 16px; z-index: 2;
+    width: min(340px, calc(100vw - 32px));
+    background: rgba(244,239,230,.94);
+    color: var(--ink);
+    border-radius: 16px;
+    padding: 14px 14px 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,.28);
+    backdrop-filter: blur(8px);
+  }
+  #hud h1 { font-size: 15px; margin: 0 0 2px; letter-spacing: .02em; }
+  #hud p.sub { margin: 0 0 10px; font-size: 12px; opacity: .7; }
+  .bot {
+    display: grid; grid-template-columns: 10px 1fr; gap: 8px;
+    padding: 8px 0; border-top: 1px solid var(--line);
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 6px; }
+  label { display: block; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; opacity: .55; margin-bottom: 3px; }
+  input, select {
+    width: 100%; border: 1px solid var(--line); background: #fff; color: var(--ink);
+    border-radius: 8px; padding: 6px 8px; font: inherit; font-size: 13px;
+  }
+  .row { display: grid; grid-template-columns: 1.1fr .9fr; gap: 6px; }
+  #hint {
+    position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+    z-index: 2; font-size: 12px; letter-spacing: .04em;
+    background: rgba(20,18,15,.72); padding: 8px 12px; border-radius: 999px;
+    color: #f4efe6;
+  }
+  #clock {
+    position: fixed; top: 16px; right: 16px; z-index: 2;
+    font-variant-numeric: tabular-nums; font-size: 13px;
+    background: rgba(20,18,15,.55); padding: 8px 12px; border-radius: 999px;
+  }
+  button.link {
+    margin-top: 8px; border: 0; background: transparent; color: #6b4b2a;
+    font: inherit; font-size: 12px; cursor: pointer; padding: 0; text-decoration: underline;
+  }
+</style>
+</head>
+<body>
+<div id="hud">
+  <h1>Oficina Frutos Chávez</h1>
+  <p class="sub">Conectada a tus Grok bots. Cada uno avisa al empezar, al esperar tu ok y al terminar.</p>
+  <p class="sub" id="live">Buscando señal…</p>
+  <div id="roster"></div>
+  <button class="link" id="probar" type="button">Probar señal de Pedidos</button>
+  <button class="link" id="reset" type="button">Vaciar la sala</button>
+</div>
+<div id="clock"></div>
+<div id="hint">Arrastra para girar · rueda para acercar · clic en un bot para enfocarlo</div>
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+<script>
+const DEFAULTS = [
+  { id: "pedidos", name: "Pedidos", role: "Captura mayoreo", status: "trabajando", color: 0xe07a2f, accent: "#e07a2f" },
+  { id: "ruta", name: "Ruta", role: "Reparto de mañana", status: "caminando", color: 0xd4a017, accent: "#d4a017" },
+  { id: "clientes", name: "Clientes", role: "Reactivación", status: "pensando", color: 0x7b4b8a, accent: "#7b4b8a" },
+  { id: "margen", name: "Margen", role: "Costos y combos", status: "esperando", color: 0x3d7a52, accent: "#3d7a52" }
+];
+const STATUSES = [
+  ["trabajando", "Trabajando en el escritorio"],
+  ["caminando", "Caminando por la oficina"],
+  ["pensando", "Pensando / revisando"],
+  ["hablando", "Hablando con el equipo"],
+  ["esperando", "Esperando tu aprobación"],
+  ["descanso", "En descanso"]
+];
+
+function loadBots() {
+  try {
+    const raw = localStorage.getItem("oficina-frutos-bots");
+    if (!raw) return DEFAULTS.map(b => ({ ...b }));
+    const saved = JSON.parse(raw);
+    return DEFAULTS.map(b => ({ ...b, ...(saved.find(s => s.id === b.id) || {}) }));
+  } catch (e) {
+    return DEFAULTS.map(b => ({ ...b }));
+  }
+}
+let bots = loadBots();
+function save() {
+  localStorage.setItem("oficina-frutos-bots", JSON.stringify(bots.map(b => ({
+    id: b.id, name: b.name, role: b.role, status: b.status
+  }))));
+}
+
+const roster = document.getElementById("roster");
+function renderRoster() {
+  roster.innerHTML = "";
+  bots.forEach((b, i) => {
+    const el = document.createElement("div");
+    el.className = "bot";
+    el.innerHTML = `
+      <div class="dot" style="background:${b.accent}"></div>
+      <div>
+        <div class="row">
+          <div><label>Nombre</label><input data-i="${i}" data-k="name" value="${escapeHtml(b.name)}" /></div>
+          <div><label>Puesto</label><input data-i="${i}" data-k="role" value="${escapeHtml(b.role)}" /></div>
+        </div>
+        <label style="margin-top:6px">Estado</label>
+        <select data-i="${i}" data-k="status">
+          ${STATUSES.map(([v, label]) => `<option value="${v}" ${b.status === v ? "selected" : ""}>${label}</option>`).join("")}
+        </select>
+      </div>`;
+    roster.appendChild(el);
+  });
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ "&": "&", "<": "<", ">": ">", '"': """, "'": "&#39;" }[c]));
+}
+renderRoster();
+roster.addEventListener("input", onEdit);
+roster.addEventListener("change", onEdit);
+function onEdit(ev) {
+  const t = ev.target;
+  if (!t.dataset) return;
+  const i = Number(t.dataset.i);
+  const k = t.dataset.k;
+  if (!bots[i] || !k) return;
+  bots[i][k] = t.value;
+  save();
+  if (actors[i]) actors[i].setLabel();
+}
+document.getElementById("reset").onclick = () => {
+  localStorage.removeItem("oficina-frutos-bots");
+  bots = DEFAULTS.map(b => ({ ...b, task: "" }));
+  save();
+  renderRoster();
+  actors.forEach(a => a.setLabel());
+  fetch("/api/estado", { method: "POST", headers: { "Content-Type": "application/json" }, body: "[]" }).catch(() => {});
+};
+const TOPIC = "frutos-chavez-oficina-7f3a9c2e1b84";
+const NTFY = "https://ntfy.sh/" + TOPIC;
+document.getElementById("probar").onclick = () => {
+  fetch(NTFY, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Title": "Pedidos" },
+    body: JSON.stringify({ name: "Pedidos", role: "Captura mayoreo", status: "trabajando", task: "Señal de prueba" })
+  }).catch(() => {});
+};
+
+const live = document.getElementById("live");
+let lastSig = "";
+let since = Math.floor(Date.now() / 1000) - 3600;
+function applyRemote(list) {
+  if (!Array.isArray(list) || !list.length) return;
+  const sig = JSON.stringify(list);
+  if (sig === lastSig) return;
+  lastSig = sig;
+  list.slice(0, 4).forEach((remote, i) => {
+    const slot = bots[i];
+    slot.name = remote.name || slot.name;
+    slot.role = remote.task || remote.role || slot.role;
+    slot.status = remote.status || slot.status;
+    slot.task = remote.task || "";
+  });
+  save();
+  renderRoster();
+  actors.forEach(a => a.setLabel());
+}
+async function pull() {
+  try {
+    const res = await fetch(NTFY + "/json?poll=1&since=" + since);
+    if (!res.ok) throw new Error("sin canal");
+    const text = await res.text();
+    const found = [];
+    text.split("\n").forEach(line => {
+      if (!line.trim()) return;
+      try {
+        const msg = JSON.parse(line);
+        since = Math.max(since, (msg.time || 0) + 1);
+        if (msg.event !== "message") return;
+        const payload = JSON.parse(msg.message);
+        if (payload && payload.name) found.push(payload);
+      } catch (err) {}
+    });
+    if (found.length) {
+      const byName = new Map();
+      found.forEach(item => byName.set(String(item.name).toLowerCase(), item));
+      applyRemote([...byName.values()]);
+    }
+    live.textContent = lastSig
+      ? "En vivo, conectado a tus bots."
+      : "Página lista. En cuanto un bot avise, ocupa su escritorio.";
+  } catch (e) {
+    live.textContent = "Sin señal del canal. Recarga en unos segundos.";
+  }
+}
+pull();
+setInterval(pull, 4000);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a1714);
+scene.fog = new THREE.Fog(0x1a1714, 18, 36);
+
+const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 80);
+camera.position.set(8.2, 6.4, 9.4);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0xfff1dc, 0x3a3228, 0.55));
+const sun = new THREE.DirectionalLight(0xffe2b8, 1.15);
+sun.position.set(-6, 10, 4);
+sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.left = -12;
+sun.shadow.camera.right = 12;
+sun.shadow.camera.top = 12;
+sun.shadow.camera.bottom = -12;
+scene.add(sun);
+const fill = new THREE.PointLight(0xffb15a, 0.35, 14);
+fill.position.set(0, 2.2, 0);
+scene.add(fill);
+
+function box(w, h, d, color, x, y, z, matOpts) {
+  const m = new THREE.Mesh(
+    new THREE.BoxGeometry(w, h, d),
+    new THREE.MeshStandardMaterial({ color, roughness: 0.78, metalness: 0.04, ...(matOpts || {}) })
+  );
+  m.position.set(x, y, z);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  scene.add(m);
+  return m;
+}
+function cyl(r, h, color, x, y, z) {
+  const m = new THREE.Mesh(
+    new THREE.CylinderGeometry(r, r, h, 20),
+    new THREE.MeshStandardMaterial({ color, roughness: 0.7 })
+  );
+  m.position.set(x, y, z);
+  m.castShadow = true;
+  scene.add(m);
+  return m;
+}
+
+box(16, 0.18, 14, 0xc4a574, 0, 0, 0);
+box(16.4, 0.08, 14.4, 0x6b5340, 0, -0.08, 0);
+box(0.2, 3.2, 14, 0xe7d7c3, -8, 1.6, 0);
+box(0.2, 3.2, 14, 0xe7d7c3, 8, 1.6, 0);
+box(16, 3.2, 0.2, 0xefe4d4, 0, 1.6, -7);
+box(16, 0.18, 14.4, 0xf7f1e8, 0, 3.2, 0, { roughness: 1 });
+
+const windowGlass = new THREE.Mesh(
+  new THREE.PlaneGeometry(6.4, 1.6),
+  new THREE.MeshStandardMaterial({ color: 0x8eb4c8, emissive: 0x234155, emissiveIntensity: 0.45, roughness: 0.2, metalness: 0.1 })
+);
+windowGlass.position.set(0, 2.15, -6.88);
+scene.add(windowGlass);
+for (let i = -2; i <= 2; i++) box(0.06, 1.6, 0.06, 0x5c4636, i * 1.5, 2.15, -6.84);
+
+box(3.2, 1.5, 0.08, 0xf8f5ef, -5.4, 1.7, -6.85);
+box(1.6, 0.9, 0.06, 0x2f6b4f, -5.4, 1.65, -6.8);
+
+const desks = [
+  { x: -3.3, z: -2.4, rot: 0 },
+  { x: 3.3, z: -2.4, rot: 0 },
+  { x: -3.3, z: 2.6, rot: Math.PI },
+  { x: 3.3, z: 2.6, rot: Math.PI }
+];
+desks.forEach(d => {
+  const g = new THREE.Group();
+  const top = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.08, 0.85), new THREE.MeshStandardMaterial({ color: 0x8a5a32, roughness: 0.55 }));
+  top.position.y = 0.74;
+  top.castShadow = true;
+  const leg = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.7, 0.7), new THREE.MeshStandardMaterial({ color: 0x5c3b22 }));
+  leg.position.y = 0.35;
+  const screen = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.4, 0.04), new THREE.MeshStandardMaterial({ color: 0x1d2420, emissive: 0x3d7a52, emissiveIntensity: 0.35 }));
+  screen.position.set(0, 1.05, -0.22);
+  const stand = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.18, 0.06), new THREE.MeshStandardMaterial({ color: 0x222 }));
+  stand.position.set(0, 0.86, -0.22);
+  g.add(top, leg, screen, stand);
+  g.position.set(d.x, 0, d.z);
+  g.rotation.y = d.rot;
+  scene.add(g);
+  d.group = g;
+});
+
+cyl(0.18, 0.72, 0x6d4c32, 0, 0.36, 0.2);
+cyl(0.55, 0.08, 0xa97445, 0, 0.76, 0.2);
+const plantPot = cyl(0.16, 0.22, 0xc46a3a, -6.6, 0.12, 5.4);
+const leaves = new THREE.Mesh(new THREE.SphereGeometry(0.34, 12, 10), new THREE.MeshStandardMaterial({ color: 0x3f8f55 }));
+leaves.position.set(-6.6, 0.48, 5.4);
+scene.add(leaves);
+
+function makeLabel(text) {
+  const c = document.createElement("canvas");
+  c.width = 512; c.height = 160;
+  const ctx = c.getContext("2d");
+  const tex = new THREE.CanvasTexture(c);
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(1.7, 0.53, 1);
+  sprite.userData = { ctx, tex, c };
+  paintLabel(sprite, text, "");
+  return sprite;
+}
+function paintLabel(sprite, name, role) {
+  const { ctx, tex, c } = sprite.userData;
+  ctx.clearRect(0, 0, c.width, c.height);
+  ctx.fillStyle = "rgba(28,25,21,0.82)";
+  roundRect(ctx, 16, 18, 480, 124, 28);
+  ctx.fill();
+  ctx.fillStyle = "#f4efe6";
+  ctx.font = "700 48px Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(String(name || "Bot").slice(0, 16), 256, 72);
+  ctx.font = "400 26px Segoe UI, sans-serif";
+  ctx.fillStyle = "#e7d3b0";
+  ctx.fillText(String(role || "").slice(0, 32), 256, 112);
+  tex.needsUpdate = true;
+}
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function makePerson(color) {
+  const g = new THREE.Group();
+  const skin = 0xf0c7a4;
+  const shirt = new THREE.MeshStandardMaterial({ color, roughness: 0.65 });
+  const cloth = new THREE.MeshStandardMaterial({ color: 0x2c2824, roughness: 0.8 });
+  const skinM = new THREE.MeshStandardMaterial({ color: skin, roughness: 0.55 });
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.48, 0.24), shirt);
+  body.position.y = 1.02;
+  body.castShadow = true;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 18, 14), skinM);
+  head.position.y = 1.4;
+  head.castShadow = true;
+  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.165, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.62), new THREE.MeshStandardMaterial({ color: 0x2a211c }));
+  hair.position.y = 1.45;
+  const legL = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.42, 0.14), cloth);
+  const legR = legL.clone();
+  legL.position.set(-0.1, 0.62, 0);
+  legR.position.set(0.1, 0.62, 0);
+  const armL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.38, 0.1), shirt);
+  const armR = armL.clone();
+  armL.position.set(-0.28, 1.02, 0);
+  armR.position.set(0.28, 1.02, 0);
+  g.add(body, head, hair, legL, legR, armL, armR);
+  g.userData.limbs = { legL, legR, armL, armR, body };
+  return g;
+}
+
+const home = desks.map(d => ({
+  x: d.x,
+  z: d.z + (d.rot === 0 ? 0.7 : -0.7),
+  rot: d.rot
+}));
+const coffee = { x: 0.9, z: 0.2 };
+
+const actors = bots.map((b, i) => {
+  const person = makePerson(b.color);
+  person.position.set(home[i].x, 0, home[i].z);
+  person.rotation.y = home[i].rot;
+  scene.add(person);
+  const label = makeLabel(b.name);
+  label.position.set(0, 1.85, 0);
+  person.add(label);
+  const bubble = makeBubble();
+  bubble.position.set(0.35, 1.55, 0);
+  person.add(bubble);
+  return {
+    bot: b,
+    person,
+    label,
+    bubble,
+    home: home[i],
+    phase: i * 1.3,
+    setLabel() { paintLabel(label, b.name, b.role); }
+  };
+});
+actors.forEach(a => a.setLabel());
+
+function makeBubble() {
+  const c = document.createElement("canvas");
+  c.width = 128; c.height = 128;
+  const ctx = c.getContext("2d");
+  const tex = new THREE.CanvasTexture(c);
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
+  s.scale.set(0.42, 0.42, 1);
+  s.userData = { ctx, tex, c };
+  return s;
+}
+function paintBubble(sprite, emoji, on) {
+  const { ctx, tex, c } = sprite.userData;
+  ctx.clearRect(0, 0, 128, 128);
+  if (on) {
+    ctx.fillStyle = "rgba(255,250,242,0.94)";
+    ctx.beginPath();
+    ctx.arc(64, 58, 40, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = "42px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(emoji, 64, 72);
+  }
+  tex.needsUpdate = true;
+}
+
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let focus = null;
+let yaw = 0.55, pitch = 0.62, dist = 13.5;
+let dragging = false, lx = 0, ly = 0;
+
+renderer.domElement.addEventListener("pointerdown", e => {
+  dragging = true; lx = e.clientX; ly = e.clientY;
+  pointer.x = (e.clientX / innerWidth) * 2 - 1;
+  pointer.y = -(e.clientY / innerHeight) * 2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObjects(actors.map(a => a.person), true);
+  if (hits[0]) {
+    focus = actors.find(a => a.person === hits[0].object || a.person.children.includes(hits[0].object) || isDesc(a.person, hits[0].object));
+  }
+});
+function isDesc(root, obj) {
+  let p = obj;
+  while (p) { if (p === root) return true; p = p.parent; }
+  return false;
+}
+window.addEventListener("pointerup", () => dragging = false);
+window.addEventListener("pointermove", e => {
+  if (!dragging) return;
+  yaw -= (e.clientX - lx) * 0.005;
+  pitch = Math.max(0.25, Math.min(1.15, pitch + (e.clientY - ly) * 0.004));
+  lx = e.clientX; ly = e.clientY;
+});
+window.addEventListener("wheel", e => {
+  dist = Math.max(6, Math.min(22, dist + e.deltaY * 0.01));
+}, { passive: true });
+window.addEventListener("resize", () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+function tickClock() {
+  const now = new Date();
+  document.getElementById("clock").textContent = now.toLocaleString("es-MX", { hour: "2-digit", minute: "2-digit", weekday: "short" });
+}
+tickClock();
+setInterval(tickClock, 15000);
+
+const clock = new THREE.Clock();
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+  const target = focus ? focus.person.position : new THREE.Vector3(0, 0.8, 0);
+  const camTarget = target.clone();
+  camTarget.y = 1.1;
+  camera.position.x = camTarget.x + Math.sin(yaw) * dist * Math.cos(pitch * 0.35);
+  camera.position.z = camTarget.z + Math.cos(yaw) * dist * Math.cos(pitch * 0.35);
+  camera.position.y = 1.4 + dist * Math.sin(pitch) * 0.45;
+  camera.lookAt(camTarget);
+
+  actors.forEach((a, i) => {
+    const status = a.bot.status;
+    const limbs = a.person.userData.limbs;
+    const home = a.home;
+    let tx = home.x, tz = home.z, trot = home.rot;
+    let emoji = "💻", show = true;
+    if (status === "caminando") {
+      const ang = t * 0.45 + a.phase;
+      tx = Math.cos(ang) * 2.4;
+      tz = Math.sin(ang) * 1.6;
+      trot = ang + Math.PI / 2;
+      emoji = "🚶";
+    } else if (status === "hablando") {
+      tx = (i % 2 === 0 ? -0.7 : 0.7);
+      tz = 0.15;
+      trot = i % 2 === 0 ? 0.4 : -0.4;
+      emoji = "💬";
+    } else if (status === "descanso") {
+      tx = coffee.x + (i - 1.5) * 0.35;
+      tz = coffee.z + 0.8;
+      trot = Math.PI;
+      emoji = "☕";
+    } else if (status === "pensando") {
+      emoji = "💡";
+    } else if (status === "esperando") {
+      emoji = "✋";
+    }
+    a.person.position.x += (tx - a.person.position.x) * 0.04;
+    a.person.position.z += (tz - a.person.position.z) * 0.04;
+    const dy = trot - a.person.rotation.y;
+    a.person.rotation.y += Math.atan2(Math.sin(dy), Math.cos(dy)) * 0.08;
+
+    const moving = Math.hypot(tx - a.person.position.x, tz - a.person.position.z) > 0.08 || status === "caminando";
+    const swing = moving ? Math.sin(t * 7 + a.phase) * 0.55 : Math.sin(t * 1.5 + a.phase) * 0.08;
+    limbs.legL.rotation.x = swing;
+    limbs.legR.rotation.x = -swing;
+    limbs.armL.rotation.x = status === "trabajando" ? -0.8 + Math.sin(t * 8 + i) * 0.25 : -swing * 0.7;
+    limbs.armR.rotation.x = status === "trabajando" ? -0.8 + Math.sin(t * 8 + i + 1) * 0.25 : swing * 0.7;
+    a.person.position.y = moving ? Math.abs(Math.sin(t * 7 + a.phase)) * 0.04 : 0;
+    paintBubble(a.bubble, emoji, show);
+    a.bubble.position.y = 1.62 + Math.sin(t * 2 + i) * 0.04;
+  });
+  renderer.render(scene, camera);
+}
+animate();
+</script>
+</body>
+</html>
