@@ -806,6 +806,32 @@ for (let r = 0; r < 4; r++) {
 }
 machine.add(machineBody, machineGlass, slot);
 machine.position.set(7.55, 0, 4.4);
+
+const freezer = new THREE.Group();
+const freezerBody = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.85, 0.8), new THREE.MeshStandardMaterial({ color: 0xf4f7f8, roughness: 0.35, metalness: 0.25 }));
+freezerBody.position.y = 0.45;
+const freezerInside = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.55, 0.62), new THREE.MeshStandardMaterial({ color: 0xd7eef8 }));
+freezerInside.position.y = 0.5;
+const bagColors = [0xe23b32, 0xf0c14b, 0xf28a2e, 0x7b4b8a, 0x2ea043, 0xf2f2f2];
+bagColors.forEach((color, i) => {
+  const bag = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.16, 0.18), new THREE.MeshStandardMaterial({ color, roughness: 0.6 }));
+  bag.position.set(-0.5 + (i % 3) * 0.38, 0.42, i < 3 ? -0.12 : 0.12);
+  freezer.add(bag);
+});
+function makeLid(x) {
+  const hinge = new THREE.Group();
+  hinge.position.set(x, 0.88, -0.38);
+  const lid = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.06, 0.78), new THREE.MeshStandardMaterial({ color: 0xe8eef1, metalness: 0.35, roughness: 0.3 }));
+  lid.position.set(0, 0.02, 0.38);
+  hinge.add(lid);
+  return hinge;
+}
+const lidL = makeLid(-0.42);
+const lidR = makeLid(0.42);
+freezer.add(freezerBody, freezerInside, lidL, lidR);
+freezer.position.set(-6.2, 0, -4.6);
+scene.add(freezer);
+
 machine.rotation.y = -Math.PI / 2;
 scene.add(machine);
 
@@ -1081,7 +1107,7 @@ function planRest(resting, t) {
     names[n] = names[j];
     names[j] = tmp;
   }
-  const acts = ["sleep", "play", "chat", "ping", "drink"];
+  const acts = ["sleep", "play", "chat", "ping", "drink", "freezer"];
   const map = {};
   names.forEach(name => { map[name] = acts[Math.floor(Math.random() * acts.length)]; });
   restPlan = { at: t, key: key, map: map };
@@ -1094,7 +1120,8 @@ const solids = [
   { x: 3.5, z: 2.8, hx: 0.95, hz: 0.42 },
   { x: 0, z: 0.4, hx: 0.75, hz: 1.25 },
   { x: 7.5, z: 4.4, hx: 0.5, hz: 0.55 },
-  { x: -6.5, z: 5.2, hx: 0.4, hz: 0.4 }
+  { x: -6.5, z: 5.2, hx: 0.4, hz: 0.4 },
+  { x: -6.2, z: -4.6, hx: 0.9, hz: 0.45 }
 ];
 function keepOut(pos, radius) {
   pos.x = Math.max(-7.35, Math.min(7.35, pos.x));
@@ -1371,6 +1398,12 @@ function animate() {
         officeBall.position.x = 4.2 + Math.cos(ang + 0.8) * 0.55;
         officeBall.position.z = 3.4 + Math.sin(ang + 0.8) * 0.4;
         officeBall.position.y = 0.18 + Math.abs(Math.sin(t * 3)) * 0.25;
+      } else if (mode === "freezer") {
+        tx = -5.1;
+        tz = -4.6 + (si - 0.5) * 0.6;
+        trot = Math.atan2(-6.2 - tx, -4.6 - tz);
+        emoji = "🧊";
+        pose = "freezer";
       } else if (mode === "drink") {
         const ang = t * 0.35 + si * 1.7;
         tx = 5.7 + Math.cos(ang) * 0.7;
@@ -1467,6 +1500,10 @@ function animate() {
     }
   }
   actors.forEach(a => keepOut(a.person.position, 0.28));
+  const freezerOpen = actors.some(a => a.pose === "freezer");
+  const lidTarget = freezerOpen ? -1.15 : 0;
+  lidL.rotation.x += (lidTarget - lidL.rotation.x) * 0.08;
+  lidR.rotation.x += (lidTarget - lidR.rotation.x) * 0.08;
   actors.forEach((a, i) => { if (a.bot.status === "esperando") paintScreen(i, Math.sin(t * 5) > 0); });
   setMurmur(actors.filter(a => a.pose === "chat").length >= 2, t);
   renderer.render(scene, camera);
