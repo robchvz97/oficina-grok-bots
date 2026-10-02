@@ -265,62 +265,107 @@ function cyl(r, h, color, x, y, z) {
   return m;
 }
 
-box(16, 0.18, 14, 0xc4a574, 0, 0, 0);
-box(16.4, 0.08, 14.4, 0x6b5340, 0, -0.08, 0);
-box(0.2, 3.2, 14, 0xe7d7c3, -8, 1.6, 0);
-box(0.2, 3.2, 14, 0xe7d7c3, 8, 1.6, 0);
-box(16, 3.2, 0.2, 0xefe4d4, 0, 1.6, -7);
-box(16, 0.18, 14.4, 0xf7f1e8, 0, 3.2, 0, { roughness: 1 });
+box(16, 0.12, 14, 0x8d734c, 0, 0, 0);
+box(16.2, 0.06, 14.2, 0x3e342c, 0, -0.06, 0);
+box(0.18, 3.3, 14, 0xf4efe6, -8, 1.65, 0);
+box(0.18, 3.3, 14, 0xf4efe6, 8, 1.65, 0);
+box(16, 3.3, 0.16, 0xf7f3ec, 0, 1.65, -7);
+box(16, 0.12, 14.2, 0xfbf8f3, 0, 3.25, 0, { roughness: 0.9 });
 
-const windowGlass = new THREE.Mesh(
-  new THREE.PlaneGeometry(6.4, 1.6),
-  new THREE.MeshStandardMaterial({ color: 0x8eb4c8, emissive: 0x234155, emissiveIntensity: 0.45, roughness: 0.2, metalness: 0.1 })
-);
-windowGlass.position.set(0, 2.15, -6.88);
-scene.add(windowGlass);
-for (let i = -2; i <= 2; i++) box(0.06, 1.6, 0.06, 0x5c4636, i * 1.5, 2.15, -6.84);
+const glassMat = new THREE.MeshStandardMaterial({ color: 0xb7d4e4, emissive: 0x1d4e6a, emissiveIntensity: 0.35, roughness: 0.08, metalness: 0.25, transparent: true, opacity: 0.72 });
+const frameMat = new THREE.MeshStandardMaterial({ color: 0xd9dde2, metalness: 0.65, roughness: 0.25 });
+function pane(w, h, x, y, z, rotY) {
+  const g = new THREE.Mesh(new THREE.PlaneGeometry(w, h), glassMat);
+  g.position.set(x, y, z);
+  g.rotation.y = rotY || 0;
+  scene.add(g);
+  return g;
+}
+pane(10.4, 2.15, 0.2, 1.85, -6.9, 0);
+pane(4.6, 2.05, -7.9, 1.8, -1.2, Math.PI / 2);
+pane(4.6, 2.05, -7.9, 1.8, 2.6, Math.PI / 2);
+for (let i = -4; i <= 4; i++) box(0.045, 2.2, 0.045, 0xd9dde2, i * 1.15, 1.85, -6.86);
+box(10.6, 0.06, 0.06, 0xd9dde2, 0.2, 2.95, -6.86);
+box(10.6, 0.06, 0.06, 0xd9dde2, 0.2, 0.75, -6.86);
 
-box(3.2, 1.5, 0.08, 0xf8f5ef, -5.4, 1.7, -6.85);
-box(1.6, 0.9, 0.06, 0x2f6b4f, -5.4, 1.65, -6.8);
+const logoFrame = new THREE.Mesh(new THREE.BoxGeometry(3.4, 2.15, 0.06), new THREE.MeshStandardMaterial({ color: 0xf7f4ee }));
+logoFrame.position.set(5.2, 1.85, -6.82);
+scene.add(logoFrame);
+const logoBorder = new THREE.Mesh(new THREE.BoxGeometry(3.55, 2.3, 0.04), new THREE.MeshStandardMaterial({ color: 0xc5a46a, metalness: 0.4, roughness: 0.35 }));
+logoBorder.position.set(5.2, 1.85, -6.86);
+scene.add(logoBorder);
+const logoMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+const logo = new THREE.Mesh(new THREE.PlaneGeometry(3.15, 1.9), logoMat);
+logo.position.set(5.2, 1.85, -6.78);
+scene.add(logo);
+new THREE.TextureLoader().load("logo.jpg", function (tex) {
+  if (tex.colorSpace !== undefined && THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
+  logoMat.map = tex;
+  logoMat.needsUpdate = true;
+});
 
 const desks = [
-  { x: -3.3, z: -2.4, rot: 0 },
-  { x: 3.3, z: -2.4, rot: 0 },
-  { x: -3.3, z: 2.6, rot: Math.PI },
-  { x: 3.3, z: 2.6, rot: Math.PI }
+  { x: -3.4, z: -2.2, rot: 0 },
+  { x: 3.5, z: -2.2, rot: 0 },
+  { x: -3.4, z: 2.8, rot: Math.PI },
+  { x: 3.5, z: 2.8, rot: Math.PI }
 ];
+const wood = new THREE.MeshStandardMaterial({ color: 0x6b4428, roughness: 0.42, metalness: 0.08 });
+const metal = new THREE.MeshStandardMaterial({ color: 0xcfd3d6, metalness: 0.7, roughness: 0.28 });
+const leather = new THREE.MeshStandardMaterial({ color: 0x1e242b, roughness: 0.45 });
 desks.forEach(d => {
   const g = new THREE.Group();
-  const top = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.08, 0.85), new THREE.MeshStandardMaterial({ color: 0x8a5a32, roughness: 0.55 }));
-  top.position.y = 0.74;
+  const top = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.06, 0.78), wood);
+  top.position.set(0, 0.76, 0);
   top.castShadow = true;
-  const leg = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.7, 0.7), new THREE.MeshStandardMaterial({ color: 0x5c3b22 }));
-  leg.position.y = 0.35;
-  const screen = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.4, 0.04), new THREE.MeshStandardMaterial({ color: 0x1d2420, emissive: 0x3d7a52, emissiveIntensity: 0.35 }));
-  screen.position.set(0, 1.05, -0.22);
-  const stand = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.18, 0.06), new THREE.MeshStandardMaterial({ color: 0x222 }));
-  stand.position.set(0, 0.86, -0.22);
-  g.add(top, leg, screen, stand);
+  const wing = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.06, 1.15), wood);
+  wing.position.set(0.62, 0.76, 0.7);
+  wing.castShadow = true;
+  const legA = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.72, 0.05), metal);
+  const legB = legA.clone();
+  const legC = legA.clone();
+  legA.position.set(-0.8, 0.36, -0.28);
+  legB.position.set(0.8, 0.36, -0.28);
+  legC.position.set(0.8, 0.36, 1.05);
+  const screen = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.42, 0.03), new THREE.MeshStandardMaterial({ color: 0x101814, emissive: 0x1f6b45, emissiveIntensity: 0.4 }));
+  screen.position.set(-0.15, 1.08, -0.28);
+  const stand = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.2, 0.05), metal);
+  stand.position.set(-0.15, 0.86, -0.28);
+  const chair = new THREE.Group();
+  const seat = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.07, 0.46), leather);
+  seat.position.y = 0.48;
+  const back = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.48, 0.06), leather);
+  back.position.set(0, 0.74, -0.2);
+  const armL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.32), metal);
+  const armR = armL.clone();
+  armL.position.set(-0.24, 0.62, 0);
+  armR.position.set(0.24, 0.62, 0);
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.28, 10), metal);
+  pole.position.y = 0.28;
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.04, 16), metal);
+  base.position.y = 0.08;
+  chair.add(seat, back, armL, armR, pole, base);
+  chair.position.set(0, 0, 0.72);
+  g.add(top, wing, legA, legB, legC, screen, stand, chair);
   g.position.set(d.x, 0, d.z);
   g.rotation.y = d.rot;
   scene.add(g);
   d.group = g;
 });
 
-cyl(0.18, 0.72, 0x6d4c32, 0, 0.36, 0.2);
-cyl(0.55, 0.08, 0xa97445, 0, 0.76, 0.2);
-const plantPot = cyl(0.16, 0.22, 0xc46a3a, -6.6, 0.12, 5.4);
-const leaves = new THREE.Mesh(new THREE.SphereGeometry(0.34, 12, 10), new THREE.MeshStandardMaterial({ color: 0x3f8f55 }));
-leaves.position.set(-6.6, 0.48, 5.4);
+cyl(0.16, 0.74, 0x4a3428, 0.2, 0.37, 0.15);
+cyl(0.62, 0.06, 0xc4a574, 0.2, 0.76, 0.15);
+const plantPot = cyl(0.18, 0.24, 0x2f5d3a, -6.5, 0.12, 5.2);
+const leaves = new THREE.Mesh(new THREE.SphereGeometry(0.38, 14, 12), new THREE.MeshStandardMaterial({ color: 0x3f8f55 }));
+leaves.position.set(-6.5, 0.52, 5.2);
 scene.add(leaves);
 const officeBall = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 12), new THREE.MeshStandardMaterial({ color: 0xf4f4f4, roughness: 0.4 }));
 officeBall.position.set(4.2, 0.16, 3.6);
 officeBall.castShadow = true;
 scene.add(officeBall);
-const napMat = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.08, 0.8), new THREE.MeshStandardMaterial({ color: 0x6d8fbf }));
-napMat.position.set(0, 0.06, 2.6);
+const napMat = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.06, 0.8), new THREE.MeshStandardMaterial({ color: 0x6d8fbf }));
+napMat.position.set(0, 0.05, 2.6);
 scene.add(napMat);
-
 
 function makeLabel(text) {
   const c = document.createElement("canvas");
