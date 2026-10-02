@@ -379,6 +379,14 @@ const lamps = [];
   bulb.position.set(x, 8.8, 0);
   scene.add(bulb);
   lamps.push(bulb);
+  const glow = new THREE.Mesh(
+    new THREE.CircleGeometry(1.15, 24),
+    new THREE.MeshBasicMaterial({ color: 0xfff1c9, transparent: true, opacity: 0 })
+  );
+  glow.rotation.x = -Math.PI / 2;
+  glow.position.set(x, 0.09, 0);
+  scene.add(glow);
+  lamps.push(glow);
 });
 let weatherDim = 1;
 let sunriseHour = 7.4;
@@ -406,8 +414,8 @@ function cyl(r, h, color, x, y, z) {
   return m;
 }
 
-const marbleA = new THREE.MeshStandardMaterial({ color: 0xf4f1ea, roughness: 0.28, metalness: 0.08 });
-const marbleB = new THREE.MeshStandardMaterial({ color: 0xd9d3c8, roughness: 0.32, metalness: 0.06 });
+const marbleA = new THREE.MeshStandardMaterial({ color: 0xf4f1ea, roughness: 0.18, metalness: 0.16 });
+const marbleB = new THREE.MeshStandardMaterial({ color: 0xd9d3c8, roughness: 0.2, metalness: 0.12 });
 for (let ix = -7; ix <= 7; ix++) {
   for (let iz = -6; iz <= 6; iz++) {
     const tile = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.06, 0.98), (ix + iz) % 2 === 0 ? marbleA : marbleB);
@@ -1148,7 +1156,7 @@ function animate() {
   else if (hh > sunsetHour - 0.4) day = (sunsetHour + 0.5 - hh) / 0.9;
   day = Math.max(0, Math.min(1, day));
   sun.intensity = 0.12 + day * weatherDim * 1.15;
-  lamps.forEach(bulb => { bulb.intensity = (1 - day) * 14; });
+  lamps.forEach(item => { if (item.isLight) item.intensity = (1 - day) * 14; else item.material.opacity = (1 - day) * 0.22; });
   lampMat.emissiveIntensity = (1 - day) * 0.8;
   fill.intensity = 0.2 + (1 - day) * 0.35;
   if (rain.visible) rain.children.forEach(drop => {
