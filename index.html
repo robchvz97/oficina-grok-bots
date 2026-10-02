@@ -829,7 +829,7 @@ function makeLid(x) {
 const lidL = makeLid(-0.42);
 const lidR = makeLid(0.42);
 freezer.add(freezerBody, freezerInside, lidL, lidR);
-freezer.position.set(-6.2, 0, -4.6);
+freezer.position.set(-6.85, 0, -6.15);
 scene.add(freezer);
 
 machine.rotation.y = -Math.PI / 2;
@@ -1121,7 +1121,7 @@ const solids = [
   { x: 0, z: 0.4, hx: 0.75, hz: 1.25 },
   { x: 7.5, z: 4.4, hx: 0.5, hz: 0.55 },
   { x: -6.5, z: 5.2, hx: 0.4, hz: 0.4 },
-  { x: -6.2, z: -4.6, hx: 0.9, hz: 0.45 }
+  { x: -6.85, z: -6.15, hx: 0.9, hz: 0.45 }
 ];
 function keepOut(pos, radius) {
   pos.x = Math.max(-7.35, Math.min(7.35, pos.x));
@@ -1399,9 +1399,9 @@ function animate() {
         officeBall.position.z = 3.4 + Math.sin(ang + 0.8) * 0.4;
         officeBall.position.y = 0.18 + Math.abs(Math.sin(t * 3)) * 0.25;
       } else if (mode === "freezer") {
-        tx = -5.1;
-        tz = -4.6 + (si - 0.5) * 0.6;
-        trot = Math.atan2(-6.2 - tx, -4.6 - tz);
+        tx = -5.4;
+        tz = -5.2 + (si - 0.5) * 0.5;
+        trot = Math.atan2(-6.85 - tx, -6.15 - tz);
         emoji = "🧊";
         pose = "freezer";
       } else if (mode === "drink") {
