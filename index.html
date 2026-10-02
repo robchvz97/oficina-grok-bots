@@ -927,6 +927,7 @@ function animate() {
     let tx = home.x, tz = home.z, trot = home.rot;
     let emoji = "💻", show = true;
     let pose = "stand";
+    if (status === "trabajando") trot = home.rot + Math.PI;
     if (status === "caminando") {
       const ang = t * 0.45 + a.phase;
       tx = Math.cos(ang) * 2.4;
