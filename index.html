@@ -29,6 +29,8 @@
   }
   #hud h1 { font-size: 15px; margin: 0 0 2px; letter-spacing: .02em; }
   #hud p.sub { margin: 0 0 10px; font-size: 12px; opacity: .7; }
+  .bot.needs-you { outline: 2px solid #e0a020; background: #fff4dc; }
+  .needs-tag { color: #9a6a10; font-size: 11px; font-weight: 700; margin-top: 4px; }
   .bot {
     display: grid; grid-template-columns: 10px 1fr; gap: 8px;
     padding: 8px 0; border-top: 1px solid var(--line);
@@ -120,7 +122,7 @@ function renderRoster() {
   roster.innerHTML = "";
   bots.forEach((b, i) => {
     const el = document.createElement("div");
-    el.className = "bot";
+    el.className = "bot" + (b.status === "esperando" ? " needs-you" : "");
     el.innerHTML = `
       <div class="dot" style="background:${b.accent}"></div>
       <div>
@@ -132,6 +134,7 @@ function renderRoster() {
         <select data-i="${i}" data-k="status">
           ${STATUSES.map(([v, label]) => `<option value="${v}" ${b.status === v ? "selected" : ""}>${label}</option>`).join("")}
         </select>
+        ${b.status === "esperando" ? '<div class="needs-tag">Necesita tu ok</div>' : ""}
       </div>`;
     roster.appendChild(el);
   });
@@ -151,6 +154,7 @@ function onEdit(ev) {
   bots[i][k] = t.value;
   save();
   if (actors[i]) actors[i].setLabel();
+  paintScreen(i);
 }
 document.getElementById("reset").onclick = () => {
   localStorage.removeItem("oficina-frutos-bots");
@@ -159,21 +163,22 @@ document.getElementById("reset").onclick = () => {
   renderRoster();
   
 
-function paintScreen(i) {
+function paintScreen(i, blink) {
   const desk = desks[i];
   const bot = bots[i];
   if (!desk || !desk.display || !bot) return;
   const ctx = desk.display.ctx;
+  const waiting = bot.status === "esperando";
   const working = bot.status === "trabajando";
-  ctx.fillStyle = working ? "#10261c" : "#141816";
+  ctx.fillStyle = waiting ? (blink ? "#f0b429" : "#c9841a") : working ? "#10261c" : "#141816";
   ctx.fillRect(0, 0, 512, 320);
-  ctx.fillStyle = working ? "#7dcea0" : "#8a8175";
-  ctx.font = "600 28px Segoe UI, sans-serif";
-  ctx.fillText(String(bot.name || "Bot").slice(0, 18), 28, 48);
-  ctx.fillStyle = "#f4efe6";
-  ctx.font = "400 34px Segoe UI, sans-serif";
-  const line = working ? (bot.task || bot.role || "Trabajando") : "Pantalla en espera";
-  wrapText(ctx, String(line), 28, 110, 456, 42);
+  ctx.fillStyle = waiting ? "#2a2118" : working ? "#7dcea0" : "#8a8175";
+  ctx.font = "700 28px Segoe UI, sans-serif";
+  ctx.fillText(waiting ? "NECESITA TU OK" : String(bot.name || "Bot").slice(0, 18), 28, 48);
+  ctx.fillStyle = waiting ? "#2a2118" : "#f4efe6";
+  ctx.font = "400 32px Segoe UI, sans-serif";
+  const line = waiting ? (bot.task || "Esperando tu aprobacion") : working ? (bot.task || bot.role || "Trabajando") : "Pantalla en espera";
+  wrapText(ctx, String(line), 28, 110, 456, 40);
   desk.display.tex.needsUpdate = true;
 }
 function wrapText(ctx, text, x, y, max, lh) {
@@ -992,6 +997,7 @@ function animate() {
     }
   }
   actors.forEach(a => keepOut(a.person.position, 0.28));
+  actors.forEach((a, i) => { if (a.bot.status === "esperando") paintScreen(i, Math.sin(t * 5) > 0); });
   setMurmur(actors.filter(a => a.pose === "chat").length >= 2, t);
   renderer.render(scene, camera);
 }
