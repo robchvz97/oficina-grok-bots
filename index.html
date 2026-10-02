@@ -325,6 +325,7 @@ async function pull() {
         }
         if (payload && (payload.sales != null || payload.total != null)) {
           daySales = Number(payload.sales != null ? payload.sales : payload.total);
+          localStorage.setItem("oficina-ventas", String(daySales));
           if (typeof paintSales === "function") paintSales();
         }
         if (payload && payload.name) found.push(payload);
@@ -864,20 +865,21 @@ hopper.position.set(-0.08, 0.28, -0.02);
 const tray = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.03, 0.16), green);
 tray.position.set(0.02, 0.24, 0.2);
 const salesCanvas = document.createElement("canvas");
-salesCanvas.width = 256; salesCanvas.height = 128;
+salesCanvas.width = 512; salesCanvas.height = 256;
 const salesCtx = salesCanvas.getContext("2d");
 const salesTex = new THREE.CanvasTexture(salesCanvas);
-const screen = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.08, 0.012), new THREE.MeshBasicMaterial({ map: salesTex }));
-screen.position.set(0.12, 0.18, 0.16);
-let daySales = null;
+const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.22), new THREE.MeshBasicMaterial({ map: salesTex, side: THREE.DoubleSide }));
+screen.position.set(0, 0.2, 0.2);
+let daySales = localStorage.getItem("oficina-ventas");
 function paintSales() {
-  salesCtx.fillStyle = "#102818";
-  salesCtx.fillRect(0, 0, 256, 128);
-  salesCtx.fillStyle = "#9dffb0";
-  salesCtx.font = "600 28px Segoe UI, sans-serif";
-  salesCtx.fillText("VENTAS", 16, 36);
-  salesCtx.font = "700 42px Segoe UI, sans-serif";
-  salesCtx.fillText(daySales == null ? "—" : "$" + Number(daySales).toLocaleString("es-MX"), 16, 92);
+  salesCtx.fillStyle = "#07140c";
+  salesCtx.fillRect(0, 0, 512, 256);
+  salesCtx.fillStyle = "#b6ffc8";
+  salesCtx.font = "600 48px Segoe UI, sans-serif";
+  salesCtx.textAlign = "center";
+  salesCtx.fillText("VENTAS", 256, 78);
+  salesCtx.font = "700 92px Segoe UI, sans-serif";
+  salesCtx.fillText(daySales == null || daySales === "" ? "—" : "$" + Number(daySales).toLocaleString("es-MX"), 256, 180);
   salesTex.needsUpdate = true;
 }
 paintSales();
