@@ -869,7 +869,7 @@ salesCanvas.width = 512; salesCanvas.height = 256;
 const salesCtx = salesCanvas.getContext("2d");
 const salesTex = new THREE.CanvasTexture(salesCanvas);
 const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.22), new THREE.MeshBasicMaterial({ map: salesTex, side: THREE.DoubleSide }));
-screen.position.set(0, 0.2, 0.2);
+screen.position.set(0, 0.4, 0.18);
 let daySales = localStorage.getItem("oficina-ventas");
 function paintSales() {
   salesCtx.fillStyle = "#07140c";
