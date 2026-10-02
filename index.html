@@ -566,6 +566,24 @@ function tickClock() {
 tickClock();
 setInterval(tickClock, 15000);
 
+
+let restPlan = { at: -99, key: "", map: {} };
+function planRest(resting, t) {
+  const key = resting.map(x => x.bot.name).sort().join("|");
+  if (restPlan.key === key && t - restPlan.at < 28) return restPlan.map;
+  const bag = ["sleep", "play", "chat"];
+  while (bag.length < resting.length) bag.push(bag[Math.floor(Math.random() * 3)]);
+  for (let n = bag.length - 1; n > 0; n--) {
+    const j = Math.floor(Math.random() * (n + 1));
+    const tmp = bag[n];
+    bag[n] = bag[j];
+    bag[j] = tmp;
+  }
+  const map = {};
+  resting.forEach((x, n) => { map[x.bot.name] = bag[n]; });
+  restPlan = { at: t, key: key, map: map };
+  return map;
+}
 const clock = new THREE.Clock();
 function animate() {
   requestAnimationFrame(animate);
@@ -611,24 +629,27 @@ function animate() {
       emoji = "💬";
     } else if (status === "descanso") {
       const resting = actors.filter(x => x.bot.status === "descanso" && x.bot.name !== "Sin conectar");
-      const ri = Math.max(0, resting.indexOf(a));
-      const mode = ri % 3;
-      if (mode === 0) {
-        tx = 0; tz = 2.6; trot = Math.PI; emoji = "💤"; pose = "sleep";
-      } else if (mode === 1) {
-        const ang = t * 1.3 + a.phase;
-        tx = 4.2 + Math.cos(ang) * 1.1;
-        tz = 3.6 + Math.sin(ang) * 0.8;
+      const plan = planRest(resting, t);
+      const mode = plan[a.bot.name] || "chat";
+      const same = resting.filter(x => plan[x.bot.name] === mode);
+      const si = Math.max(0, same.indexOf(a));
+      if (mode === "sleep") {
+        tx = -1.2 + si * 1.3; tz = 2.4; trot = Math.PI; emoji = "💤"; pose = "sleep";
+      } else if (mode === "play") {
+        const ang = t * 1.3 + si * 2.1;
+        tx = 4.2 + Math.cos(ang) * (1.05 + si * 0.35);
+        tz = 3.4 + Math.sin(ang) * 0.8;
         trot = ang + Math.PI / 2;
         emoji = "⚽";
         pose = "play";
-        officeBall.position.x = 4.2 + Math.cos(ang + 0.8) * 0.7;
-        officeBall.position.z = 3.6 + Math.sin(ang + 0.8) * 0.55;
+        officeBall.position.x = 4.2 + Math.cos(ang + 0.8) * 0.55;
+        officeBall.position.z = 3.4 + Math.sin(ang + 0.8) * 0.4;
         officeBall.position.y = 0.18 + Math.abs(Math.sin(t * 3)) * 0.25;
       } else {
-        tx = -1.1 + (ri % 2) * 1.15;
-        tz = 4.5;
-        trot = ri % 2 === 0 ? 0.7 : -0.7;
+        const ang = si * (Math.PI * 2 / Math.max(same.length, 1));
+        tx = -3.4 + Math.cos(ang) * 0.7;
+        tz = 4.3 + Math.sin(ang) * 0.55;
+        trot = Math.atan2(-Math.cos(ang), -Math.sin(ang));
         emoji = "😄";
         pose = "chat";
       }
