@@ -67,7 +67,7 @@
   <button class="link" id="reset" type="button">Vaciar la sala</button>
 </div>
 <div id="clock"></div>
-<div id="hint">Arrastra para girar · rueda para acercar · clic en un bot para enfocarlo</div>
+<div id="hint">WASD para caminar · mouse para mirar · rueda para alejar la camara</div>
 <script src="three.min.js"></script>
 <script>
 const DEFAULTS = [
@@ -445,6 +445,14 @@ const pointer = new THREE.Vector2();
 let focus = null;
 let yaw = 0.55, pitch = 0.62, dist = 13.5;
 let dragging = false, lx = 0, ly = 0;
+const keys = {};
+const player = { x: 0, z: 5.2, yaw: 0.2, pitch: 0.2 };
+let walking = false;
+window.addEventListener("keydown", e => {
+  keys[e.key.toLowerCase()] = true;
+  if (["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"," "].includes(e.key.toLowerCase())) e.preventDefault();
+});
+window.addEventListener("keyup", e => { keys[e.key.toLowerCase()] = false; });
 
 renderer.domElement.addEventListener("pointerdown", e => {
   dragging = true; lx = e.clientX; ly = e.clientY;
@@ -465,7 +473,9 @@ window.addEventListener("pointerup", () => dragging = false);
 window.addEventListener("pointermove", e => {
   if (!dragging) return;
   yaw -= (e.clientX - lx) * 0.005;
+  player.yaw -= (e.clientX - lx) * 0.005;
   pitch = Math.max(0.25, Math.min(1.15, pitch + (e.clientY - ly) * 0.004));
+  player.pitch = Math.max(-0.4, Math.min(0.8, player.pitch + (e.clientY - ly) * 0.004));
   lx = e.clientX; ly = e.clientY;
 });
 window.addEventListener("wheel", e => {
@@ -488,13 +498,26 @@ const clock = new THREE.Clock();
 function animate() {
   requestAnimationFrame(animate);
   const t = clock.getElapsedTime();
-  const target = focus ? focus.person.position : new THREE.Vector3(0, 0.8, 0);
-  const camTarget = target.clone();
-  camTarget.y = 1.1;
-  camera.position.x = camTarget.x + Math.sin(yaw) * dist * Math.cos(pitch * 0.35);
-  camera.position.z = camTarget.z + Math.cos(yaw) * dist * Math.cos(pitch * 0.35);
-  camera.position.y = 1.4 + dist * Math.sin(pitch) * 0.45;
-  camera.lookAt(camTarget);
+  const forward = (keys.w || keys.arrowup ? 1 : 0) - (keys.s || keys.arrowdown ? 1 : 0);
+  const strafe = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0);
+  if (forward || strafe) walking = true;
+  if (walking) {
+    const speed = 0.09;
+    player.x += Math.sin(player.yaw) * forward * speed + Math.cos(player.yaw) * strafe * speed;
+    player.z += Math.cos(player.yaw) * forward * speed - Math.sin(player.yaw) * strafe * speed;
+    player.x = Math.max(-7.2, Math.min(7.2, player.x));
+    player.z = Math.max(-6.2, Math.min(6.2, player.z));
+    camera.position.set(player.x, 1.55, player.z);
+    camera.lookAt(player.x + Math.sin(player.yaw), 1.45 - player.pitch * 0.6, player.z + Math.cos(player.yaw));
+  } else {
+    const target = focus ? focus.person.position : new THREE.Vector3(0, 0.8, 0);
+    const camTarget = target.clone();
+    camTarget.y = 1.1;
+    camera.position.x = camTarget.x + Math.sin(yaw) * dist * Math.cos(pitch * 0.35);
+    camera.position.z = camTarget.z + Math.cos(yaw) * dist * Math.cos(pitch * 0.35);
+    camera.position.y = 1.4 + dist * Math.sin(pitch) * 0.45;
+    camera.lookAt(camTarget);
+  }
 
   actors.forEach((a, i) => {
     const status = a.bot.status;
@@ -542,6 +565,8 @@ function animate() {
     } else if (status === "esperando") {
       emoji = "✋";
     }
+    tx += ((i % 2) - 0.5) * 0.15;
+    tz += (i - 1.5) * 0.12;
     a.person.position.x += (tx - a.person.position.x) * 0.04;
     a.person.position.z += (tz - a.person.position.z) * 0.04;
     const dy = trot - a.person.rotation.y;
@@ -576,6 +601,24 @@ function animate() {
     paintBubble(a.bubble, emoji, show);
     a.bubble.position.y = 1.62 + Math.sin(t * 2 + i) * 0.04;
   });
+  for (let i = 0; i < actors.length; i++) {
+    for (let j = i + 1; j < actors.length; j++) {
+      const pa = actors[i].person.position;
+      const pb = actors[j].person.position;
+      let dx = pa.x - pb.x;
+      let dz = pa.z - pb.z;
+      let dist2 = Math.hypot(dx, dz);
+      const min = 1.05;
+      if (dist2 < min) {
+        if (dist2 < 0.001) { dx = 0.4; dz = 0.2; dist2 = Math.hypot(dx, dz); }
+        const push = (min - dist2) * 0.5;
+        pa.x += dx / dist2 * push;
+        pa.z += dz / dist2 * push;
+        pb.x -= dx / dist2 * push;
+        pb.z -= dz / dist2 * push;
+      }
+    }
+  }
   renderer.render(scene, camera);
 }
 animate();
