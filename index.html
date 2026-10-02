@@ -55,6 +55,9 @@
     margin-top: 8px; border: 0; background: transparent; color: #6b4b2a;
     font: inherit; font-size: 12px; cursor: pointer; padding: 0; text-decoration: underline;
   }
+
+  #joy { position: fixed; right: 22px; bottom: 28px; width: 128px; height: 128px; border-radius: 50%; background: rgba(28,25,21,0.35); border: 2px solid rgba(255,255,255,0.35); touch-action: none; z-index: 6; }
+  #knob { position: absolute; left: 44px; top: 44px; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,250,242,0.9); }
 </style>
 </head>
 <body>
@@ -67,7 +70,8 @@
   <button class="link" id="reset" type="button">Vaciar la sala</button>
 </div>
 <div id="clock"></div>
-<div id="hint">WASD para caminar · mouse para mirar · rueda para alejar la camara</div>
+<div id="hint">W adelante · S atras · A izquierda · D derecha · en el celular usa el joystick</div>
+<div id="joy"><div id="knob"></div></div>
 <script src="three.min.js"></script>
 <script>
 const DEFAULTS = [
@@ -148,6 +152,32 @@ document.getElementById("reset").onclick = () => {
 actors.forEach(a => a.setLabel());
   fetch("/api/estado", { method: "POST", headers: { "Content-Type": "application/json" }, body: "[]" }).catch(() => {});
 };
+
+const joyEl = document.getElementById("joy");
+const knob = document.getElementById("knob");
+function setJoy(cx, cy, px, py) {
+  const dx = px - cx;
+  const dy = py - cy;
+  const max = 44;
+  const len = Math.hypot(dx, dy) || 1;
+  const cl = Math.min(max, len);
+  const nx = dx / len * cl;
+  const ny = dy / len * cl;
+  knob.style.left = (44 + nx) + "px";
+  knob.style.top = (44 + ny) + "px";
+  joy.x = nx / max;
+  joy.y = -ny / max;
+}
+function joyPoint(e) {
+  const t = e.touches ? e.touches[0] : e;
+  const r = joyEl.getBoundingClientRect();
+  setJoy(r.left + r.width / 2, r.top + r.height / 2, t.clientX, t.clientY);
+}
+joyEl.addEventListener("pointerdown", e => { joyEl.setPointerCapture(e.pointerId); joyPoint(e); e.preventDefault(); });
+joyEl.addEventListener("pointermove", e => { if (e.buttons || e.pressure) joyPoint(e); });
+function resetJoy() { joy.x = 0; joy.y = 0; knob.style.left = "44px"; knob.style.top = "44px"; }
+joyEl.addEventListener("pointerup", resetJoy);
+joyEl.addEventListener("pointercancel", resetJoy);
 const TOPIC = "frutos-chavez-oficina-7f3a9c2e1b84";
 const NTFY = "https://ntfy.sh/" + TOPIC;
 document.getElementById("probar").onclick = () => {
@@ -275,10 +305,10 @@ for (let ix = -7; ix <= 7; ix++) {
     scene.add(tile);
   }
 }
-box(0.22, 4.8, 14, 0xe7d3b0, -8, 2.4, 0);
-box(0.22, 4.8, 14, 0xe7d3b0, 8, 2.4, 0);
-box(16, 4.8, 0.18, 0xecdcc0, 0, 2.4, -7);
-box(16, 0.12, 14.2, 0xf3ead8, 0, 4.8, 0, { roughness: 0.85 });
+box(0.22, 9.6, 14, 0xe7d3b0, -8, 4.8, 0);
+box(0.22, 9.6, 14, 0xe7d3b0, 8, 4.8, 0);
+box(16, 9.6, 0.18, 0xecdcc0, 0, 4.8, -7);
+box(16, 0.12, 14.2, 0xf3ead8, 0, 9.6, 0, { roughness: 0.85 });
 
 const glassMat = new THREE.MeshStandardMaterial({ color: 0xb7d4e4, emissive: 0x1d4e6a, emissiveIntensity: 0.35, roughness: 0.08, metalness: 0.25, transparent: true, opacity: 0.72 });
 const frameMat = new THREE.MeshStandardMaterial({ color: 0xd9dde2, metalness: 0.65, roughness: 0.25 });
@@ -289,11 +319,11 @@ function pane(w, h, x, y, z, rotY) {
   scene.add(g);
   return g;
 }
-pane(10.4, 2.8, 0.2, 2.35, -6.9, 0);
-pane(4.6, 2.7, -7.9, 2.3, -1.2, Math.PI / 2);
-pane(4.6, 2.7, -7.9, 2.3, 2.6, Math.PI / 2);
-for (let i = -4; i <= 4; i++) box(0.045, 2.85, 0.045, 0xd9dde2, i * 1.15, 2.35, -6.86);
-box(10.6, 0.06, 0.06, 0xd9dde2, 0.2, 3.75, -6.86);
+pane(10.4, 5.6, 0.2, 3.6, -6.9, 0);
+pane(4.6, 5.4, -7.9, 3.5, -1.2, Math.PI / 2);
+pane(4.6, 5.4, -7.9, 3.5, 2.6, Math.PI / 2);
+for (let i = -4; i <= 4; i++) box(0.045, 5.6, 0.045, 0xd9dde2, i * 1.15, 3.6, -6.86);
+box(10.6, 0.06, 0.06, 0xd9dde2, 0.2, 6.4, -6.86);
 box(10.6, 0.06, 0.06, 0xd9dde2, 0.2, 0.75, -6.86);
 
 const logoMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
@@ -617,6 +647,7 @@ let yaw = 0.55, pitch = 0.62, dist = 13.5;
 let dragging = false, lx = 0, ly = 0;
 const keys = {};
 const player = { x: 0, z: 5.2, yaw: 0.2, pitch: 0.2 };
+const joy = { x: 0, y: 0 };
 let walking = false;
 window.addEventListener("keydown", e => {
   keys[e.key.toLowerCase()] = true;
@@ -686,13 +717,20 @@ const clock = new THREE.Clock();
 function animate() {
   requestAnimationFrame(animate);
   const t = clock.getElapsedTime();
-  const forward = (keys.w || keys.arrowup ? 1 : 0) - (keys.s || keys.arrowdown ? 1 : 0);
-  const strafe = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0);
-  if (forward || strafe) walking = true;
+  const forward = (keys.w || keys.arrowup ? 1 : 0) - (keys.s || keys.arrowdown ? 1 : 0) + joy.y;
+  const strafe = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0) + joy.x;
+  if (forward || strafe) {
+    if (!walking) player.yaw = yaw;
+    walking = true;
+  }
   if (walking) {
     const speed = 0.09;
-    player.x += Math.sin(player.yaw) * forward * speed + Math.cos(player.yaw) * strafe * speed;
-    player.z += Math.cos(player.yaw) * forward * speed - Math.sin(player.yaw) * strafe * speed;
+    const lookX = Math.sin(player.yaw);
+    const lookZ = Math.cos(player.yaw);
+    const rightX = lookZ;
+    const rightZ = -lookX;
+    player.x += (lookX * forward + rightX * strafe) * speed;
+    player.z += (lookZ * forward + rightZ * strafe) * speed;
     player.x = Math.max(-7.2, Math.min(7.2, player.x));
     player.z = Math.max(-6.2, Math.min(6.2, player.z));
     camera.position.set(player.x, 1.55, player.z);
