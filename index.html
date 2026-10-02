@@ -60,10 +60,10 @@
 <body>
 <div id="hud">
   <h1>Oficina Frutos Chávez</h1>
-  <p class="sub">Conectada a tus Grok bots. Cada uno avisa al empezar, al esperar tu ok y al terminar.</p>
+  <p class="sub">Los escritorios estan vacios hasta que tus bots avisen. Pega el aviso en cada uno, con su nombre real.</p>
   <p class="sub" id="live">Buscando señal…</p>
   <div id="roster"></div>
-  <button class="link" id="probar" type="button">Probar señal de Pedidos</button>
+  <button class="link" id="probar" type="button">Probar señal</button>
   <button class="link" id="reset" type="button">Vaciar la sala</button>
 </div>
 <div id="clock"></div>
@@ -71,10 +71,10 @@
 <script src="three.min.js"></script>
 <script>
 const DEFAULTS = [
-  { id: "pedidos", name: "Pedidos", role: "Captura mayoreo", status: "trabajando", color: 0xe07a2f, accent: "#e07a2f" },
-  { id: "ruta", name: "Ruta", role: "Reparto de mañana", status: "caminando", color: 0xd4a017, accent: "#d4a017" },
-  { id: "clientes", name: "Clientes", role: "Reactivación", status: "pensando", color: 0x7b4b8a, accent: "#7b4b8a" },
-  { id: "margen", name: "Margen", role: "Costos y combos", status: "esperando", color: 0x3d7a52, accent: "#3d7a52" }
+  { id: "b1", name: "Sin conectar", role: "Esperando a tu bot", status: "descanso", color: 0xe07a2f, accent: "#e07a2f" },
+  { id: "b2", name: "Sin conectar", role: "Esperando a tu bot", status: "descanso", color: 0xd4a017, accent: "#d4a017" },
+  { id: "b3", name: "Sin conectar", role: "Esperando a tu bot", status: "descanso", color: 0x7b4b8a, accent: "#7b4b8a" },
+  { id: "b4", name: "Sin conectar", role: "Esperando a tu bot", status: "descanso", color: 0x3d7a52, accent: "#3d7a52" }
 ];
 const STATUSES = [
   ["trabajando", "Trabajando en el escritorio"],
@@ -153,7 +153,7 @@ document.getElementById("probar").onclick = () => {
   fetch(NTFY, {
     method: "POST",
     headers: { "Content-Type": "application/json", "Title": "Pedidos" },
-    body: JSON.stringify({ name: "Pedidos", role: "Captura mayoreo", status: "trabajando", task: "Señal de prueba" })
+    body: JSON.stringify({ name: "Prueba", role: "Senal", status: "trabajando", task: "Senal de prueba" })
   }).catch(() => {});
 };
 
@@ -165,11 +165,15 @@ function applyRemote(list) {
   const sig = JSON.stringify(list);
   if (sig === lastSig) return;
   lastSig = sig;
-  list.slice(0, 4).forEach((remote, i) => {
-    const slot = bots[i];
-    slot.name = remote.name || slot.name;
+  list.slice(0, 4).forEach((remote) => {
+    const name = String(remote.name || "").trim();
+    if (!name) return;
+    let slot = bots.find((b) => b.name.toLowerCase() === name.toLowerCase());
+    if (!slot) slot = bots.find((b) => b.name === "Sin conectar");
+    if (!slot) slot = bots[0];
+    slot.name = name;
     slot.role = remote.task || remote.role || slot.role;
-    slot.status = remote.status || slot.status;
+    slot.status = remote.status || "trabajando";
     slot.task = remote.task || "";
   });
   save();
