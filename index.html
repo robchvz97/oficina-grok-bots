@@ -482,9 +482,21 @@ function paintSky(mode) {
       ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 8, y + 28); ctx.stroke();
     }
   }
+  if (isNight) {
+    ctx.fillStyle = "rgba(7,10,20,0.78)";
+    ctx.fillRect(0, 0, 1024, 512);
+    const colors = ["#ffe1a8", "#ffd27a", "#9fd0ff", "#fff6d8", "#f2c14e"];
+    for (let i = 0; i < 110; i++) {
+      ctx.globalAlpha = 0.4 + ((i * 13) % 50) / 100;
+      ctx.fillStyle = colors[i % colors.length];
+      ctx.fillRect(16 + (i * 53) % 990, 230 + (i * 31) % 250, i % 4 === 0 ? 10 : 5, 7);
+    }
+    ctx.globalAlpha = 1;
+  }
   skyTex.needsUpdate = true;
 }
 let skyMode = "cloud";
+let isNight = true;
 skyMode = "cloud"; paintSky("cloud");
 const rain = new THREE.Group();
 const dropGeo = new THREE.BoxGeometry(0.035, 0.55, 0.035);
@@ -1264,6 +1276,8 @@ function animate() {
   else if (hh < sunriseHour + 0.4) day = (hh - (sunriseHour - 0.5)) / 0.9;
   else if (hh > sunsetHour - 0.4) day = (sunsetHour + 0.5 - hh) / 0.9;
   day = Math.max(0, Math.min(1, day));
+  const nightNow = day < 0.35;
+  if (nightNow !== isNight) { isNight = nightNow; paintSky(skyMode); }
   sun.intensity = 0.12 + day * weatherDim * 1.15;
   lamps.forEach(item => { if (item.isLight) item.intensity = (1 - day) * 14; else item.material.opacity = (1 - day) * 0.22; });
   lampMat.emissiveIntensity = (1 - day) * 0.8;
