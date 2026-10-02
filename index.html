@@ -841,12 +841,24 @@ const packLeg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.7, 0.08), new THREE
 });
 scene.add(packTable);
 const boxes = [];
+const iqfCanvas = document.createElement("canvas");
+iqfCanvas.width = 256; iqfCanvas.height = 128;
+const iqfCtx = iqfCanvas.getContext("2d");
+iqfCtx.fillStyle = "#c4a574";
+iqfCtx.fillRect(0, 0, 256, 128);
+iqfCtx.fillStyle = "#111";
+iqfCtx.font = "700 64px Segoe UI, sans-serif";
+iqfCtx.textAlign = "center";
+iqfCtx.fillText("IQF", 128, 82);
+const iqfTex = new THREE.CanvasTexture(iqfCanvas);
 for (let i = 0; i < 4; i++) {
-  const box = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.28, 0.34), new THREE.MeshStandardMaterial({ color: 0xc4a574, roughness: 0.8 }));
+  const box = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.28, 0.34), new THREE.MeshStandardMaterial({ map: iqfTex, color: 0xc4a574, roughness: 0.8 }));
   box.position.set(-6.85, 0.55, -6.15);
   scene.add(box);
   boxes.push(box);
 }
+let packOut = false;
+let packCount = 0;
 
 machine.rotation.y = -Math.PI / 2;
 scene.add(machine);
@@ -1521,15 +1533,20 @@ function animate() {
   const lidTarget = freezerOpen ? -1.15 : 0;
   lidL.rotation.x += (lidTarget - lidL.rotation.x) * 0.08;
   lidR.rotation.x += (lidTarget - lidR.rotation.x) * 0.08;
-  const packing = Math.floor(t / 18) % 2 === 0;
+  if (freezerOpen) {
+    packCount += 0.012;
+    if (packCount >= boxes.length) {
+      packCount = 0;
+      packOut = !packOut;
+    }
+  }
   boxes.forEach((box, i) => {
-    const out = packing && t % 18 > i * 3;
-    const back = !packing && t % 18 > i * 3;
-    const onTable = packing ? out : !back;
+    const moved = packOut ? i < packCount : i >= boxes.length - packCount;
+    const onTable = packOut ? moved : !moved;
     const target = onTable
       ? new THREE.Vector3(-4.9, 0.92 + i * 0.3, -6.15)
       : new THREE.Vector3(-6.85, 0.55, -6.15);
-    box.position.lerp(target, 0.04);
+    box.position.lerp(target, freezerOpen ? 0.06 : 0);
   });
   actors.forEach((a, i) => { if (a.bot.status === "esperando") paintScreen(i, Math.sin(t * 5) > 0); });
   setMurmur(actors.filter(a => a.pose === "chat").length >= 2, t);
