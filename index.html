@@ -370,6 +370,20 @@ scene.add(sun);
 const fill = new THREE.PointLight(0xffb15a, 0.35, 14);
 fill.position.set(0, 2.2, 0);
 scene.add(fill);
+const lampMat = new THREE.MeshStandardMaterial({ color: 0xf4f1e6, emissive: 0xfff4d2, emissiveIntensity: 0 });
+const lamps = [];
+[-3.2, 3.2].forEach(x => {
+  const fixture = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.06, 0.28), lampMat);
+  fixture.position.set(x, 9.35, 0);
+  scene.add(fixture);
+  const bulb = new THREE.PointLight(0xfff1c9, 0, 16);
+  bulb.position.set(x, 8.8, 0);
+  scene.add(bulb);
+  lamps.push(bulb);
+});
+let weatherDim = 1;
+let sunriseHour = 7.4;
+let sunsetHour = 19.2;
 
 function box(w, h, d, color, x, y, z, matOpts) {
   const m = new THREE.Mesh(
@@ -431,24 +445,30 @@ rain.visible = false;
 scene.add(rain);
 async function loadWeather() {
   try {
-    const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=20.6767&longitude=-103.3496&current=weather_code,cloud_cover&timezone=America%2FMexico_City");
+    const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=20.6767&longitude=-103.3496&current=weather_code,cloud_cover&daily=sunrise,sunset&timezone=America%2FMexico_City&forecast_days=1");
     const data = await res.json();
     const code = data.current.weather_code;
     const clouds = data.current.cloud_cover || 0;
     const raining = [51,53,55,56,57,61,63,65,66,67,80,81,82,95,96,99].includes(code);
     rain.visible = raining;
+    if (data.daily && data.daily.sunrise) {
+      const rise = new Date(data.daily.sunrise[0]);
+      const set = new Date(data.daily.sunset[0]);
+      sunriseHour = rise.getHours() + rise.getMinutes() / 60;
+      sunsetHour = set.getHours() + set.getMinutes() / 60;
+    }
     if (raining) {
       glassMat.color.setHex(0x8aa0ae);
       glassMat.emissiveIntensity = 0.12;
-      sun.intensity = 0.5;
+      weatherDim = 0.45;
     } else if (clouds > 60 || code === 45 || code === 48) {
       glassMat.color.setHex(0xa9b7c2);
       glassMat.emissiveIntensity = 0.2;
-      sun.intensity = 0.72;
+      weatherDim = 0.65;
     } else {
       glassMat.color.setHex(0xcfe6f4);
       glassMat.emissiveIntensity = 0.5;
-      sun.intensity = 1.25;
+      weatherDim = 1;
     }
     const note = document.getElementById("clima");
     if (note) note.textContent = raining ? "Lluvia en Guadalajara" : clouds > 60 ? "Nublado en Guadalajara" : "Despejado en Guadalajara";
@@ -1038,6 +1058,16 @@ const clock = new THREE.Clock();
 function animate() {
   requestAnimationFrame(animate);
   const t = clock.getElapsedTime();
+  const nowParts = new Intl.DateTimeFormat("en-GB", { timeZone: "America/Mexico_City", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date());
+  const hh = Number(nowParts.find(p => p.type === "hour").value) + Number(nowParts.find(p => p.type === "minute").value) / 60;
+  let day = 1;
+  if (hh < sunriseHour - 0.5 || hh > sunsetHour + 0.5) day = 0;
+  else if (hh < sunriseHour + 0.4) day = (hh - (sunriseHour - 0.5)) / 0.9;
+  else if (hh > sunsetHour - 0.4) day = (sunsetHour + 0.5 - hh) / 0.9;
+  day = Math.max(0, Math.min(1, day));
+  sun.intensity = 0.12 + day * weatherDim * 1.15;
+  lamps.forEach(bulb => { bulb.intensity = (1 - day) * 1.6; });
+  lampMat.emissiveIntensity = (1 - day) * 1.4;
   if (rain.visible) rain.children.forEach(drop => {
     drop.position.y -= drop.userData.speed;
     if (drop.position.y < 0.4) drop.position.y = 6;
