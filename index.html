@@ -1130,7 +1130,7 @@ function speakNear(bot) {
   if (spoken[bot.name] === textToSay) return;
   spoken[bot.name] = textToSay;
   window.speechSynthesis.cancel();
-  const line = bot.name + " dice: " + textToSay;
+  const line = textToSay;
   const utter = new SpeechSynthesisUtterance(line);
   utter.lang = "es-MX";
   const tune = voiceTune[String(bot.name).toLowerCase()] || { pitch: 1, rate: 1 };
