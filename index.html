@@ -102,7 +102,8 @@ const DEFAULTS = [
   { id: "b1", name: "Sin conectar", role: "Esperando a tu bot", status: "descanso", color: 0xe07a2f, accent: "#e07a2f" },
   { id: "b2", name: "Sin conectar", role: "Esperando a tu bot", status: "descanso", color: 0xd4a017, accent: "#d4a017" },
   { id: "b3", name: "Sin conectar", role: "Esperando a tu bot", status: "descanso", color: 0x7b4b8a, accent: "#7b4b8a" },
-  { id: "b4", name: "Sin conectar", role: "Esperando a tu bot", status: "descanso", color: 0x3d7a52, accent: "#3d7a52" }
+  { id: "b4", name: "Sin conectar", role: "Esperando a tu bot", status: "descanso", color: 0x3d7a52, accent: "#3d7a52" },
+  { id: "b5", name: "Sin conectar", role: "Esperando a tu bot", status: "descanso", color: 0x2f6f8f, accent: "#2f6f8f" }
 ];
 const STATUSES = [
   ["trabajando", "Trabajando en el escritorio"],
@@ -289,7 +290,7 @@ function applyRemote(list) {
   const sig = JSON.stringify(list);
   if (sig === lastSig) return;
   lastSig = sig;
-  list.slice(0, 4).forEach((remote) => {
+  list.slice(0, 8).forEach((remote) => {
     const name = String(remote.name || "").trim();
     if (!name) return;
     let slot = bots.find((b) => b.name.toLowerCase() === name.toLowerCase());
@@ -712,7 +713,8 @@ const desks = [
   { x: -3.4, z: -2.2, rot: 0 },
   { x: 3.5, z: -2.2, rot: 0 },
   { x: -3.4, z: 2.8, rot: Math.PI },
-  { x: 3.5, z: 2.8, rot: Math.PI }
+  { x: 3.5, z: 2.8, rot: Math.PI },
+  { x: 0.2, z: -4.8, rot: 0 }
 ];
 const wood = new THREE.MeshStandardMaterial({ color: 0x6b4428, roughness: 0.42, metalness: 0.08 });
 const metal = new THREE.MeshStandardMaterial({ color: 0xcfd3d6, metalness: 0.7, roughness: 0.28 });
@@ -1258,6 +1260,7 @@ const solids = [
   { x: 3.5, z: -2.2, hx: 0.95, hz: 0.42 },
   { x: -3.4, z: 2.8, hx: 0.95, hz: 0.42 },
   { x: 3.5, z: 2.8, hx: 0.95, hz: 0.42 },
+  { x: 0.2, z: -4.8, hx: 0.95, hz: 0.42 },
   { x: 0, z: 0.4, hx: 0.75, hz: 1.25 },
   { x: 7.5, z: 4.4, hx: 0.5, hz: 0.55 },
   { x: -6.5, z: 5.2, hx: 0.4, hz: 0.4 },
