@@ -1061,15 +1061,22 @@ function makePerson(color) {
   const goriCap = new THREE.Mesh(new THREE.SphereGeometry(0.155, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.48), hairMat.gori);
   goriCap.position.y = 1.42;
   features.gori.add(goriCap);
-  const yupiCapMat = new THREE.MeshStandardMaterial({ color: 0x2f6fd6, roughness: 0.4 });
-  const yupiCrown = new THREE.Mesh(new THREE.SphereGeometry(0.2, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.52), yupiCapMat);
-  yupiCrown.position.y = 1.5;
-  const yupiBand = new THREE.Mesh(new THREE.CylinderGeometry(0.175, 0.175, 0.035, 16), yupiCapMat);
-  yupiBand.position.y = 1.4;
-  const yupiBrim = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.025, 0.16), yupiCapMat);
-  yupiBrim.position.set(0, 1.36, -0.22);
-  yupiBrim.rotation.x = 0.35;
-  features.yupi.add(yupiCrown, yupiBand, yupiBrim);
+  const yupiCapMat = new THREE.MeshStandardMaterial({ color: 0x2f6fd6, roughness: 0.35 });
+  const yupiCap = new THREE.Group();
+  yupiCap.name = "yupi-cap";
+  const yupiCrown = new THREE.Mesh(new THREE.SphereGeometry(0.19, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.5), yupiCapMat);
+  yupiCrown.position.y = 0.12;
+  const yupiBand = new THREE.Mesh(new THREE.TorusGeometry(0.155, 0.018, 8, 18), yupiCapMat);
+  yupiBand.rotation.x = Math.PI / 2;
+  yupiBand.position.y = 0.02;
+  const yupiBrim = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.02, 0.18), yupiCapMat);
+  yupiBrim.position.set(0, 0.01, -0.2);
+  yupiBrim.rotation.x = 0.4;
+  yupiCap.add(yupiCrown, yupiBand, yupiBrim);
+  yupiCap.position.set(0, 0.16, 0);
+  head.add(yupiCap);
+  yupiCap.visible = false;
+  g.userData.yupiCap = yupiCap;
 
   const glass = new THREE.MeshStandardMaterial({ color: 0x1a1a1a });
   function lens(x) {
@@ -1143,6 +1150,8 @@ function setFace(actor) {
   if (look && shirt) shirt.color.setHex(look.shirt);
   if (skin && SKIN[key]) skin.color.setHex(SKIN[key]);
   Object.keys(features).forEach(name => { features[name].visible = name === key; });
+  const cap = actor.person.userData.yupiCap;
+  if (cap) cap.visible = key === "yupi";
 }
 function makeBubble() {
   const c = document.createElement("canvas");
