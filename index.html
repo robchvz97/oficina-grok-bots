@@ -1061,13 +1061,15 @@ function makePerson(color) {
   const goriCap = new THREE.Mesh(new THREE.SphereGeometry(0.155, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.48), hairMat.gori);
   goriCap.position.y = 1.42;
   features.gori.add(goriCap);
-  const yupiCapMat = new THREE.MeshStandardMaterial({ color: 0x1d4e89, roughness: 0.45 });
-  const yupiCrown = new THREE.Mesh(new THREE.SphereGeometry(0.155, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.48), yupiCapMat);
-  yupiCrown.position.y = 1.42;
-  const yupiBrim = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.02, 0.12), yupiCapMat);
-  yupiBrim.position.set(0, 1.34, -0.16);
-  yupiBrim.rotation.x = 0.25;
-  features.yupi.add(yupiCrown, yupiBrim);
+  const yupiCapMat = new THREE.MeshStandardMaterial({ color: 0x2f6fd6, roughness: 0.4 });
+  const yupiCrown = new THREE.Mesh(new THREE.SphereGeometry(0.2, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.52), yupiCapMat);
+  yupiCrown.position.y = 1.5;
+  const yupiBand = new THREE.Mesh(new THREE.CylinderGeometry(0.175, 0.175, 0.035, 16), yupiCapMat);
+  yupiBand.position.y = 1.4;
+  const yupiBrim = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.025, 0.16), yupiCapMat);
+  yupiBrim.position.set(0, 1.36, -0.22);
+  yupiBrim.rotation.x = 0.35;
+  features.yupi.add(yupiCrown, yupiBand, yupiBrim);
 
   const glass = new THREE.MeshStandardMaterial({ color: 0x1a1a1a });
   function lens(x) {
@@ -1133,7 +1135,7 @@ const actors = bots.map((b, i) => {
 });
 const SKIN = { nigoo: 0xc68642, muller: 0xe8c4a2, gori: 0xf0c7a4, gustav: 0xe8c4a0, yupi: 0xf0c7a4 };
 function setFace(actor) {
-  const key = String(actor.bot.name || "").toLowerCase();
+  const key = String(actor.bot.name || "").toLowerCase().includes("yupi") ? "yupi" : String(actor.bot.name || "").toLowerCase();
   const look = LOOKS[key];
   const shirt = actor.person.userData.shirt;
   const skin = actor.person.userData.skin;
